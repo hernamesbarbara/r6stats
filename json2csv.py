@@ -19,7 +19,7 @@ for leaderboard in ('casual', 'ranked', 'general'):
     print "*"*80
     print leaderboard.upper()
     print "*"*80
-    pages = read_json('{}-success.json'.format(leaderboard))
+    pages = read_json('data/{}-success.json'.format(leaderboard))
     for i, page in enumerate(pages):
         if i % 10 == 0:
             print "{} of {}".format(i+1, len(pages))
@@ -30,7 +30,7 @@ for leaderboard in ('casual', 'ranked', 'general'):
             all_players.append(player)
 
 df_players = json_normalize(all_players)
-outfile = 'players.csv'
+outfile = 'data/players.csv'
 df_players.to_csv(outfile, sep=',', encoding='utf-8', index=False)
 
 print "Saved {} rows to {}".format(len(df_players), outfile)

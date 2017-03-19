@@ -8,7 +8,7 @@ import pandas as pd
 pd.options.display.width = 200
 pd.options.display.max_colwidth = 75
 
-df = pd.read_csv('players.csv')
+df = pd.read_csv('data/players.csv')
 
 df.indexed_at = pd.to_datetime(df.indexed_at)
 df.updated_at = pd.to_datetime(df.updated_at)

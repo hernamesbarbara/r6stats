@@ -60,9 +60,9 @@ for leaderboard in ('ranked', 'general'):
     print "*"*80
     pages, errors = get_all_pages(leaderboard)
 
-    success_file = "{}-success.json".format(leaderboard)
+    success_file = "data/{}-success.json".format(leaderboard)
     write_json_to_file(pages, success_file)
 
-    error_file = "{}-errors.txt".format(leaderboard)
+    error_file = "data/{}-errors.txt".format(leaderboard)
     write_text_to_file(errors, error_file)
         

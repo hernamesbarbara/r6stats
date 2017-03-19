@@ -6,40 +6,63 @@ import sys
 import os
 import json
 import requests
+import collections
 
+def get_url(leaderboard):
+    base = "https://api.r6stats.com"
+    version = '/api/v1'
+    endpoint =  '/leaderboards/{}'.format(leaderboard)
+    return "{base}{version}{endpoint}".format(base=base, version=version, endpoint=endpoint)
 
-base = "https://api.r6stats.com"
-version = '/api/v1'
-endpoint =  '/leaderboards/casual'
-url = "{base}{version}{endpoint}".format(base=base, version=version, endpoint=endpoint)
-
-def get_page(url=url, page=1):
+def get_page(url, page=1):
     return requests.get(url, params={'page': page})
 
-n_pages = 7615
-n_players = 190359
+def write_json_to_file(data, outfile):
+    print "writing {}".format(outfile)
+    with open(outfile, "w") as o:
+        json.dump(pages, o, encoding='utf8', indent=2)
+    return
 
-pages = []
-page_errors = []
+def write_text_to_file(data, outfile):
+    print "writing {}".format(outfile)
+    with open(outfile, "w") as e:
+        e.write(os.linesep.join(data))
+    return
 
-n = n_pages
+def get_all_pages(leaderboard):
+    pages = []
+    errors = []
+    url = get_url(leaderboard)
+    r = get_page(url)
+    page = r.json()
+    pages.append(page)
+    meta = page['meta']
+    next_page = meta['next_page']
+    total_pages = meta['total_pages']
+    for i in xrange(next_page, total_pages+1):
+        if i % 10 == 0 or i == total_pages:
+            print "{} => {} of {}".format(leaderboard, i, total_pages)
+        try:
+            r = get_page(url, page=i)
+            page = r.json()
+            page['meta'][u'url'] = r.url
+            pages.append(page)
+        except Exception, err:
+            r = requests.Request('GET', url, params={'page':i}).prepare()
+            page = None
+            errors.append(r.url)
+    return pages, errors
 
-for i in range(1, n+1):
-    if i % 10 == 0:
-        print "{} of {}".format(i, n)
-    try:
-        r = get_page(url, i)
-        page = r.json()
-        pages.append(page)
-    except Exception, err:
-        r = requests.Request('GET', url, params={'page':i}).prepare()
-        page = None
-        page_errors.append(r.url)
 
-print "{} succuessful".format(len(pages))
-print "{} errors".format(len(page_errors))
+for leaderboard in ('ranked', 'general'):
+    print "*"*80
+    print leaderboard.upper()
+    print "*"*80
+    pages, errors = get_all_pages(leaderboard)
 
-json.dump(pages, open("pages.json", "w"), encoding='utf8', indent=2)
+    success_file = "{}-success.json".format(leaderboard)
+    write_json_to_file(pages, success_file)
 
-with open("page_errors.txt", "w") as e:
-    e.write(os.linesep.join(page_errors))
+    error_file = "{}-errors.txt".format(leaderboard)
+    write_text_to_file(errors, error_file)
+        

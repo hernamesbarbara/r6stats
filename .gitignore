@@ -161,3 +161,5 @@ vignettes/*.pdf
 *.knit.md
 
 
+*.csv 
+*.json

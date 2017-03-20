@@ -14,5 +14,6 @@ df.indexed_at = pd.to_datetime(df.indexed_at)
 df.updated_at = pd.to_datetime(df.updated_at)
 df = df.sort_values(['username', 'updated_at'], ascending=[True, False])
 
+# df.groupby('username').ubisoft_id.nunique()
 
-
+# df.groupby('platform')

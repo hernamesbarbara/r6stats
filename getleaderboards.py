@@ -25,8 +25,15 @@ def write_json_to_file(data, outfile):
 
 def write_text_to_file(data, outfile):
     print "writing {}".format(outfile)
-    with open(outfile, "w") as e:
-        e.write(os.linesep.join(data))
+    with open(outfile, "w") as o:
+        o.write(os.linesep.join(data))
+    return
+
+def append_text_to_file(data, outfile):
+    print "writing {}".format(outfile)
+    with open(outfile, "a") as o:
+        o.write(data)
+        o.write(os.linesep)
     return
 
 def get_all_pages(leaderboard):
@@ -54,15 +61,30 @@ def get_all_pages(leaderboard):
     return pages, errors
 
 
+
+# for leaderboard in ('ranked', 'general'):
+#     print "*"*80
+#     print leaderboard.upper()
+#     print "*"*80
+#     pages, errors = get_all_pages(leaderboard)
+
+#     success_file = "data/{}-success.json".format(leaderboard)
+#     write_json_to_file(pages, success_file)
+
+#     error_file = "data/{}-errors.txt".format(leaderboard)
+#     write_text_to_file(errors, error_file)
+        
+
 for leaderboard in ('ranked', 'general'):
     print "*"*80
     print leaderboard.upper()
     print "*"*80
     pages, errors = get_all_pages(leaderboard)
 
-    success_file = "data/{}-success.json".format(leaderboard)
+    success_file = "data/{}-success-002.json".format(leaderboard)
     write_json_to_file(pages, success_file)
 
-    error_file = "data/{}-errors.txt".format(leaderboard)
+    error_file = "data/{}-errors-002.txt".format(leaderboard)
     write_text_to_file(errors, error_file)
         
+

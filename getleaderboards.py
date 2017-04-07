@@ -62,20 +62,7 @@ def get_all_pages(leaderboard):
 
 
 
-# for leaderboard in ('ranked', 'general'):
-#     print "*"*80
-#     print leaderboard.upper()
-#     print "*"*80
-#     pages, errors = get_all_pages(leaderboard)
-
-#     success_file = "data/{}-success.json".format(leaderboard)
-#     write_json_to_file(pages, success_file)
-
-#     error_file = "data/{}-errors.txt".format(leaderboard)
-#     write_text_to_file(errors, error_file)
-        
-
-for leaderboard in ('ranked', 'general'):
+for leaderboard in ('casual', 'ranked', 'general'):
     print "*"*80
     print leaderboard.upper()
     print "*"*80
@@ -86,5 +73,4 @@ for leaderboard in ('ranked', 'general'):
 
     error_file = "data/{}-errors-002.txt".format(leaderboard)
     write_text_to_file(errors, error_file)
-        
-
+    

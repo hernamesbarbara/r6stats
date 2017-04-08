@@ -7,26 +7,34 @@ import os
 import json
 import requests
 import hammock
+import copy
+
 
 
 class R6Api(hammock.Hammock):
-    """query rainbow six siege API"""
 
-    ENDPOINTS = [{'leaderboards': ['casual']}]
+    ENDPOINTS = ['leaderboards']
     
-    def __init__(self):
-        base_url = "https://api.r6stats.com/api/v1"
-        super(R6Api, self).__init__(base_url)
-
-    def leaderboards(self, leaderboard, page):
-        method = super(R6Api, r6).__getattr__('leaderboards')
-        return method.GET(leaderboard, params={'page': page})
-
+    def __init__(self, name='https://api.r6stats.com/api/v1', parent=None, **kwargs):
+        super(R6Api, self).__init__(name, parent, **kwargs)
+    
+    def _url(self, *args):
+        return super(R6Api, self)._url(*args)
 
 r6 = R6Api()
+seen = []
 
-req = r6.leaderboards('casual', page=1)
-print 'url: {}'.format(req.url)
-print 'status: {}'.format(req.status_code)
+STOP_AFTER = 3
 
-data = req.json()
+if len(seen) == 0:
+    page = r6.leaderboards.casual.GET(params={'page':1}).json()
+    total_pages = page['meta']['total_pages']
+    for i in xrange(page['meta']['next_page'], total_pages):
+        try:
+            page = r6.leaderboards.casual.GET(params={'page': i}).json()
+            seen.append(page)
+        except:
+            continue
+        
+        if i >= STOP_AFTER: 
+            break

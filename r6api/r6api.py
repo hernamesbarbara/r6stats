@@ -72,3 +72,4 @@ class R6Api(Endpoint):
 # api = Endpoint()
 api = R6Api()
 
+r = api.leaderboards.casual.GET(params={'page':1})

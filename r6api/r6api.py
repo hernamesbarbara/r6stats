@@ -60,7 +60,7 @@ class R6Api(Endpoint):
     }
     
     def __init__(self):
-        super(R6Api, self).__init__(BASE_URL, ENDPOINTS)
+        super(R6Api, self).__init__(self.BASE_URL, self.ENDPOINTS)
 
     def __str__(self):
         return self._base_url

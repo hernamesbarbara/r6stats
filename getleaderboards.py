@@ -1,63 +1,41 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
-"""getplayers.py
+"""newgetleaderboards.py
 """
 import sys
 import os
 import json
 import requests
 import collections
+import pandas as pd
+from r6api import R6Api, GET
 
-def get_url(leaderboard):
-    base = "https://api.r6stats.com"
-    version = '/api/v1'
-    endpoint =  '/leaderboards/{}'.format(leaderboard)
-    return "{base}{version}{endpoint}".format(base=base, version=version, endpoint=endpoint)
+pages = []
+errors = []
 
-def get_page(url, page=1):
-    return requests.get(url, params={'page': page})
+r6 = R6Api()
 
-def write_json_to_file(data, outfile):
-    print "writing {}".format(outfile)
-    with open(outfile, "w") as o:
-        json.dump(pages, o, encoding='utf8', indent=2)
-    return
-
-def write_text_to_file(data, outfile):
-    print "writing {}".format(outfile)
-    with open(outfile, "w") as o:
-        o.write(os.linesep.join(data))
-    return
-
-def append_text_to_file(data, outfile):
-    print "writing {}".format(outfile)
-    with open(outfile, "a") as o:
-        o.write(data)
-        o.write(os.linesep)
-    return
+# r = r6.leaderboards.casual.GET(params={'page': 1})
 
 def get_all_pages(leaderboard):
     pages = []
     errors = []
-    url = get_url(leaderboard)
-    r = get_page(url)
-    page = r.json()
+
+    page = r6.leaderboards[leaderboard].GET(params={'page': 1})
     pages.append(page)
-    meta = page['meta']
-    next_page = meta['next_page']
-    total_pages = meta['total_pages']
+    
+    total_pages = page['meta']['total_pages']
+    next_page = page['meta']['next_page']
+
     for i in xrange(next_page, total_pages+1):
         if i % 10 == 0 or i == total_pages:
             print "{} => {} of {}".format(leaderboard, i, total_pages)
         try:
-            r = get_page(url, page=i)
-            page = r.json()
-            page['meta'][u'url'] = r.url
+            page = r6.leaderboards[leaderboard].GET(params={'page': i})
             pages.append(page)
         except Exception, err:
-            r = requests.Request('GET', url, params={'page':i}).prepare()
             page = None
-            errors.append(r.url)
+            errors.append(err[1])
     return pages, errors
 
 

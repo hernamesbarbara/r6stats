@@ -6,7 +6,6 @@ import sys
 import os
 import json
 import requests
-import copy
 
 
 class DotDict(dict):
@@ -24,9 +23,12 @@ class DotDict(dict):
             self[key] = value
 
 def GET(url, params={}):
-    data = requests.get(url, params).json()
-    return DotDict(data)
-
+    try:
+        data = requests.get(url, params=params).json()
+        return DotDict(data)
+    except Exception, err:
+        r = requests.Request('GET', url, params=params).prepare()
+        raise Exception("GET exception", r.url)
 
 class Endpoint(object):
     def __init__(self, base_url, child_endpoints):
@@ -40,6 +42,12 @@ class Endpoint(object):
                     setattr(self, method, wrapper)
                 continue
             setattr(self, endpoint, Endpoint(os.path.join(base_url, endpoint), children))
+
+    def __getattr__(self, attr):
+        return self.__dict__[attr]
+
+    def __getitem__(self, attr):
+        return self.__dict__[attr]
 
     def __str__(self):
         return self._base_url
@@ -61,12 +69,3 @@ class R6Api(Endpoint):
         super(R6Api, self).__init__(self.BASE_URL, self.ENDPOINTS)
 
 
-
-# api = Endpoint()
-api = R6Api()
-
-r = api.leaderboards.casual.GET(params={'page':1})
-
-# for p in r['players']:
-#     print json.dumps(p, indent=2)
-#     break

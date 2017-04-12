@@ -8,7 +8,7 @@ import json
 import requests
 import collections
 from r6api import R6Api
-import bandit
+from bandit import Bandit
 
 def get_all_pages(leaderboard):
     pages = []
@@ -32,8 +32,6 @@ def get_all_pages(leaderboard):
     return pages, errors
 
 def main():
-    r6 = R6Api()
-    bandit = bandit.Bandit()
     pages = []
     errors = []
     for leaderboard in ('casual', 'ranked', 'general'):
@@ -47,4 +45,6 @@ def main():
     sys.exit(0)
 
 if __name__ == '__main__':
+    r6 = R6Api()
+    bandit = Bandit()
     main()

@@ -10,13 +10,6 @@ import collections
 from r6api import R6Api
 import bandit
 
-pages = []
-errors = []
-
-r6 = R6Api()
-
-bandit = bandit.Bandit()
-
 def get_all_pages(leaderboard):
     pages = []
     errors = []
@@ -39,12 +32,16 @@ def get_all_pages(leaderboard):
     return pages, errors
 
 def main():
+    r6 = R6Api()
+    bandit = bandit.Bandit()
+    pages = []
+    errors = []
     for leaderboard in ('casual', 'ranked', 'general'):
         print "*"*80
         print leaderboard.upper()
         print "*"*80
         pages, errors = get_all_pages(leaderboard)
-        o = '-{}-pages.json'.format(leaderboard)
+        o = bandit.output_dir+'-{}-pages.json'.format(leaderboard)
         json.dump(pages, open(o, 'w'))
         print 'saved {} to {}'.format(len(pages), o)
     sys.exit(0)

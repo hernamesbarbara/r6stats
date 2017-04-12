@@ -7,7 +7,6 @@ import os
 import json
 import requests
 import collections
-import pandas as pd
 from r6api import R6Api, GET
 
 pages = []

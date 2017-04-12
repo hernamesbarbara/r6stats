@@ -43,6 +43,7 @@ for leaderboard in ('casual', 'ranked', 'general'):
     print "*"*80
     print leaderboard.upper()
     print "*"*80
-    # pages, errors = get_all_pages(leaderboard)
-    page = r6.leaderboards[leaderboard].GET(params={'page': 1})
-    json.dump(page, open('pages.json', 'w'))
+    pages, errors = get_all_pages(leaderboard)
+    o = '{}-pages.json'.format(leaderboard)
+    json.dump(pages, open(o, 'w'))
+    print 'saved {} to {}'.format(len(pages), o)

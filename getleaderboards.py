@@ -44,11 +44,6 @@ for leaderboard in ('casual', 'ranked', 'general'):
     print "*"*80
     print leaderboard.upper()
     print "*"*80
-    pages, errors = get_all_pages(leaderboard)
-
-    success_file = "data/{}-success-002.json".format(leaderboard)
-    write_json_to_file(pages, success_file)
-
-    error_file = "data/{}-errors-002.txt".format(leaderboard)
-    write_text_to_file(errors, error_file)
-    
+    # pages, errors = get_all_pages(leaderboard)
+    page = r6.leaderboards[leaderboard].GET(params={'page': i})
+    json.dump(page, open('pages.json', 'w'))

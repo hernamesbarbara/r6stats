@@ -10,12 +10,22 @@ import collections
 from r6api import R6Api
 from bandit import Bandit
 
-def get_all_pages(leaderboard):
-    pages = []
-    errors = []
+def dump_jsonl(data, outfile):
+    with open(outfile, 'a') as outfile:
+        if isinstance(data, dict):
+            json.dump(data, outfile)
+            outfile.write(os.linesep)
+            return
+        else:
+            for doc in data:
+                json.dump(doc, outfile)
+                outfile.write(os.linesep)
+    return True
+
+def get_all_pages(leaderboard, outfile):
 
     page = r6.leaderboards[leaderboard].GET(params={'page': 1})
-    pages.append(page)
+    dump_jsonl(page, outfile)
     
     total_pages = page['meta']['total_pages']
     next_page = page['meta']['next_page']
@@ -25,23 +35,18 @@ def get_all_pages(leaderboard):
             print "{} => {} of {}".format(leaderboard, i, total_pages)
         try:
             page = r6.leaderboards[leaderboard].GET(params={'page': i})
-            pages.append(page)
+            dump_jsonl(page, outfile)
         except Exception, err:
             page = None
-            errors.append(err[1])
-    return pages, errors
+    return True
 
 def main():
-    pages = []
-    errors = []
     for leaderboard in ('casual', 'ranked', 'general'):
         print "*"*80
         print leaderboard.upper()
         print "*"*80
-        pages, errors = get_all_pages(leaderboard)
-        o = bandit.output_dir+'-{}-pages.json'.format(leaderboard)
-        json.dump(pages, open(o, 'w'))
-        print 'saved {} to {}'.format(len(pages), o)
+        # get_all_pages(leaderboard, bandit.output_dir+'-{}-pages.jsonl')
+        get_all_pages(leaderboard, 'test.jsonl')
     sys.exit(0)
 
 if __name__ == '__main__':

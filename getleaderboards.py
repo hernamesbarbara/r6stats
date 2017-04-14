@@ -34,7 +34,10 @@ def get_all_pages(leaderboard, outfile):
         if i % 10 == 0 or i == total_pages:
             print "{} => {} of {}".format(leaderboard, i, total_pages)
         try:
-            page = r6.leaderboards[leaderboard].GET(params={'page': i})
+            try:
+                page = r6.leaderboards[leaderboard].GET(params={'page': i})
+            except Exception, err:
+                print str(err)
             dump_jsonl(page, outfile)
         except Exception, err:
             page = None
@@ -45,8 +48,7 @@ def main():
         print "*"*80
         print leaderboard.upper()
         print "*"*80
-        # get_all_pages(leaderboard, bandit.output_dir+'-{}-pages.jsonl')
-        get_all_pages(leaderboard, 'test.jsonl')
+        get_all_pages(leaderboard, bandit.output_dir+'-{}-pages.jsonl')
     sys.exit(0)
 
 if __name__ == '__main__':

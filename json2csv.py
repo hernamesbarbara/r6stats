@@ -35,4 +35,3 @@ df_players.to_csv(outfile, sep=',', encoding='utf-8', index=False)
 
 print "Saved {} rows to {}".format(len(df_players), outfile)
 
-

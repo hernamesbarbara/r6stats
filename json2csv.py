@@ -7,6 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 from pandas.io.json import json_normalize, nested_to_record
+from bandit import Bandit
 try:
     import ujson as json
 except ImportError:
@@ -38,6 +39,7 @@ def read_nested_write_flat(infile, outfile):
         write_flat_jsonl(rec, outfile)
 
 if __name__ == '__main__':
+    bandit = Bandit()
     f = 'http://bandito.yhat.com/api/projects/hernamesbarbara/r6stats/jobs/leaderboards/8/output-files/leaderboard-pages.jsonl'
     o_jsonl = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.jsonl'
     o_csv = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.csv'

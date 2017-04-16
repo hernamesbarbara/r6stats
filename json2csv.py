@@ -4,34 +4,46 @@
 """
 import sys
 import os
-import json
+import numpy as np
 import pandas as pd
-from pandas.io.json import json_normalize
+from pandas.io.json import json_normalize, nested_to_record
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 pd.options.display.width = 200
 pd.options.display.max_colwidth = 75
 
-def read_json(filename):
-    return json.load(open(filename, 'r'))
+def read_jsonl(filename):
+    with open(filename, 'r') as f:
+        for line in f.readlines():
+            try:
+                yield json.loads(line)
+            except:
+                continue
 
-all_players = []
-for leaderboard in ('casual', 'ranked', 'general'):
-    print "*"*80
-    print leaderboard.upper()
-    print "*"*80
-    pages = read_json('data/{}-success.json'.format(leaderboard))
-    for i, page in enumerate(pages):
-        if i % 10 == 0:
-            print "{} of {}".format(i+1, len(pages))
-        meta = page['meta']
-        players = page['players']
-        for player in players:
-            player.update(meta)
-            all_players.append(player)
+def write_flat_jsonl(data, outfile):
+    with open(outfile, 'a') as o:
+        try:
+            json.dump(nested_to_record(data), o)
+            o.write(os.linesep)
+        except:
+            pass
 
-df_players = json_normalize(all_players)
-outfile = 'data/players.csv'
-df_players.to_csv(outfile, sep=',', encoding='utf-8', index=False)
+def read_nested_write_flat(infile, outfile):
+    for i, rec in enumerate(read_jsonl(infile)):
+        if i % 10000 == 0:
+            print "{} done".format(i)
+        write_flat_jsonl(rec, outfile)
 
-print "Saved {} rows to {}".format(len(df_players), outfile)
+if __name__ == '__main__':
+    f = sys.argv[1]
+    o = sys.argv[2]
+    read_nested_write_flat(f, o)
+    pd.read_json(o, lines=True).to_csv('data/outfile.csv', index=False, encoding='utf-8')
 
+
+
+# %%time 
+# %run json2csv.py data/leaderboard-pages.jsonl data/leaderboard-pages2.jsonl

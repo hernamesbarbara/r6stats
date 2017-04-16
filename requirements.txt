@@ -3,3 +3,6 @@ requests==2.11.1
 requests-file==1.4.1
 requests-oauthlib==0.4.1
 requests-toolbelt==0.7.0
+ujson==1.35
+pandas==0.19.2
+numpy==1.11.3

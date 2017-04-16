@@ -38,12 +38,11 @@ def read_nested_write_flat(infile, outfile):
         write_flat_jsonl(rec, outfile)
 
 if __name__ == '__main__':
-    f = sys.argv[1]
-    o = sys.argv[2]
-    read_nested_write_flat(f, o)
-    pd.read_json(o, lines=True).to_csv('data/outfile.csv', index=False, encoding='utf-8')
+    f = 'http://bandito.yhat.com/api/projects/hernamesbarbara/r6stats/jobs/leaderboards/8/output-files/leaderboard-pages.jsonl'
+    o_jsonl = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.jsonl'
+    o_csv = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.csv'
+    print "read_nested_write_flat('{}', '{}')".format(f, o_jsonl)
+    read_nested_write_flat(f, o_jsonl)
+    print "writing csv"
+    pd.read_json(o_jsonl, lines=True).to_csv(o_csv, index=False, encoding='utf-8')
 
-
-
-# %%time 
-# %run json2csv.py data/leaderboard-pages.jsonl data/leaderboard-pages2.jsonl

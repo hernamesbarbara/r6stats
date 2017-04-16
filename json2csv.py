@@ -39,9 +39,7 @@ def read_nested_write_flat(infile, outfile):
         write_flat_jsonl(rec, outfile)
 
 if __name__ == '__main__':
-    bandit = Bandit()
-    bandit.username = 'hernamesbarbara'
-    bandit.apikey = '03f4dc72-d6cc-11e6-91fc-0242ac110003'
+    bandit = Bandit('hernamesbarbara', '03f4dc72-d6cc-11e6-91fc-0242ac110003', 'http://bandito.yhat.com/')
     f = 'leaderboard-pages.jsonl'
     data = bt.get_file('hernamesbarbara', 'r6stats', 'leaderboards', f)
     # f = 'http://bandito.yhat.com/api/projects/hernamesbarbara/r6stats/jobs/leaderboards/8/output-files/leaderboard-pages.jsonl'

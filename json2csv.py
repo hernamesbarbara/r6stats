@@ -40,7 +40,11 @@ def read_nested_write_flat(infile, outfile):
 
 if __name__ == '__main__':
     bandit = Bandit()
-    f = 'http://bandito.yhat.com/api/projects/hernamesbarbara/r6stats/jobs/leaderboards/8/output-files/leaderboard-pages.jsonl'
+    bandit.username = 'hernamesbarbara'
+    bandit.apikey = '03f4dc72-d6cc-11e6-91fc-0242ac110003'
+    f = 'leaderboard-pages.jsonl'
+    data = bt.get_file('hernamesbarbara', 'r6stats', 'leaderboards', f)
+    # f = 'http://bandito.yhat.com/api/projects/hernamesbarbara/r6stats/jobs/leaderboards/8/output-files/leaderboard-pages.jsonl'
     o_jsonl = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.jsonl'
     o_csv = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.csv'
     print "read_nested_write_flat('{}', '{}')".format(f, o_jsonl)

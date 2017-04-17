@@ -16,37 +16,37 @@ except ImportError:
 pd.options.display.width = 200
 pd.options.display.max_colwidth = 75
 
-def read_jsonl(filename):
-    with open(filename, 'r') as f:
-        for line in f.readlines():
-            try:
-                yield json.loads(line)
-            except:
-                continue
-
-def write_flat_jsonl(data, outfile):
-    with open(outfile, 'a') as o:
+def read_jsonl(stream):
+    for line in stream:
         try:
-            json.dump(nested_to_record(data), o)
-            o.write(os.linesep)
+            yield json.loads(line)
         except:
-            pass
+            continue
+
+def dump(data, stream):
+    try:
+        json.dump(data, stream)
+        stream.write(os.linesep)
+    except:
+        pass
 
 def read_nested_write_flat(infile, outfile):
-    for i, rec in enumerate(read_jsonl(infile)):
-        if i % 10000 == 0:
-            print "{} done".format(i)
-        write_flat_jsonl(rec, outfile)
+    with open(infile, 'r') as infile:
+        with open(outfile, 'a') as outfile:
+            for record in read_jsonl(infile):
+                dump(nested_to_record(record), outfile)
 
 if __name__ == '__main__':
-    bandit = Bandit('hernamesbarbara', '03f4dc72-d6cc-11e6-91fc-0242ac110003', 'http://bandito.yhat.com/')
-    f = 'leaderboard-pages.jsonl'
-    data = bt.get_file('hernamesbarbara', 'r6stats', 'leaderboards', f)
-    # f = 'http://bandito.yhat.com/api/projects/hernamesbarbara/r6stats/jobs/leaderboards/8/output-files/leaderboard-pages.jsonl'
-    o_jsonl = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.jsonl'
-    o_csv = bandit.output_dir+os.path.basename(f).rsplit('.', 1)[0]+'.csv'
-    print "read_nested_write_flat('{}', '{}')".format(f, o_jsonl)
-    read_nested_write_flat(f, o_jsonl)
-    print "writing csv"
-    pd.read_json(o_jsonl, lines=True).to_csv(o_csv, index=False, encoding='utf-8')
+    infile = 'data/leaderboard-pages.jsonl'
+    outfile = 'data/outfile.jsonl'
+
+    # next line
+    # CPU times: user 5min 59s, sys: 2.22 s, total: 6min 2s
+    # Wall time: 6min 3s
+    read_nested_write_flat(infile, outfile)
+    
+    # next line
+    # CPU times: user 1min 14s, sys: 7.69 s, total: 1min 22s
+    # Wall time: 1min 23s
+    pd.read_json(outfile, lines=True).to_csv('data/outfile.csv', index=False, encoding='utf-8')
 

@@ -2,28 +2,35 @@
 # -*- coding: utf-8 -*- 
 """analyse_players.py
 """
+import os
+import sys
 import numpy as np
 import pandas as pd
+from utils import io
 
-pd.options.display.width = 200
-pd.options.display.max_colwidth = 75
+pd.options.display.width = 220
+pd.options.display.max_colwidth = 80
+pd.options.display.max_columns = 40
 
-def select_stats_for(frame, platform, game_mode):
-    stats_columns = frame.columns[
-        (frame.columns.str.startswith("stats.{}".format(game_mode))) &
-        (frame.columns != "stats.{}.playtime".format(game_mode)) &
-        (frame.columns != "stats.{}.has_played".format(game_mode))
-    ]
-    return frame.ix[frame['platform'] == platform, stats_columns]
 
-df = pd.read_csv('tmp/sample.csv')
 
-df.indexed_at = pd.to_datetime(df.indexed_at)
-df.updated_at = pd.to_datetime(df.updated_at)
-df = df.sort_values(['username', 'updated_at'], ascending=[True, False])
+df = pd.read_csv(sys.argv[1]).head(1000)
 
-df_stats = select_stats_for(df, 'ps4', 'ranked')
+df_ps4 = io.read_player_csv(df, platform='ps4', game_mode='')
+df_uplay = io.read_player_csv(df, platform='uplay', game_mode='')
+df_xone = io.read_player_csv(df, platform='xone', game_mode='')
 
+
+print "df_ps4: {} rows".format(df_ps4.shape[0])
+print "df_uplay: {} rows".format(df_uplay.shape[0])
+print "df_xone: {} rows".format(df_xone.shape[0])
+
+
+
+###############
+###############
+
+df_stats = io.select_stats_columns_by_game_mode(df_ps4, '')
 target = 'stats.ranked.wlr'
 features = [col for col in df_stats.columns if col != target]
 
@@ -32,13 +39,44 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn import preprocessing
+from sklearn.ensemble import ExtraTreesRegressor
+
+
+forest = ExtraTreesRegressor(n_estimators=250, random_state=0)
+
+X, y = df_stats[features], df_stats[target]
+forest.fit(X, y)
+importances = forest.feature_importances_
+std = np.std([tree.feature_importances_ for tree in forest.estimators_],
+             axis=0)
+indices = np.argsort(importances)[::-1]
+
+# Print the feature ranking
+print("Feature ranking:")
+
+for f in range(X.shape[1]):
+    print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+
+# Plot the feature importances of the forest
+fig = plt.figure()
+plt.title("Feature importances")
+plt.bar(range(X.shape[1]), importances[indices],
+       color="r", yerr=std[indices], align="center")
+plt.xticks(range(X.shape[1]), [features[i] for i in indices])
+fig.autofmt_xdate()
+plt.xlim([-1, X.shape[1]])
+plt.show()
+
+
+features = [
+    'stats.ranked.kd'
+]
 
 for feature in features:
     X = df_stats[[feature]]
     y = df_stats[[target]]
 
     X = pd.DataFrame(preprocessing.scale(X), columns=X.columns)
-
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.40, random_state=42)
 
 

@@ -13,7 +13,9 @@ except ImportError:
     import json
 
 
-DATE_COLUMNS = ('indexed_at', 'updated_at')
+DATE_COLUMNS = ['indexed_at', 'updated_at']
+
+ID_COLUMNS = ['platform', 'ubisoft_id', 'username']
 
 def read_jsonl_stream(stream):
     for line in stream:
@@ -46,8 +48,9 @@ def _get_row_mask_for_platform(frame, platform):
 
 def _get_col_mask_for_game_mode_stats(frame, game_mode=""):
     mask1 = frame.columns.str.startswith('stats.{}'.format(game_mode))
-    mask2 = frame.columns.str.endswith('has_played')==False
-    return frame.columns[mask1 & mask2]
+    mask2 = frame.columns.str.startswith('stats.overall')
+    mask3 = frame.columns.str.endswith('has_played')==False
+    return frame.columns[ (mask1|mask2) & (mask3)]
     
 def select_rows_by_platform(frame, platform):
     return frame[_get_row_mask_for_platform(frame, platform)]
@@ -56,18 +59,17 @@ def select_stats_columns_by_game_mode(frame, game_mode=""):
     frame = frame.ix[:,_get_col_mask_for_game_mode_stats(frame, game_mode)]
     return frame.astype(np.float64)
 
-def read_player_csv(frame_or_csv, platform, game_mode):
-    if isinstance(frame_or_csv, basestring):
-        df = pd.read_csv(filename)
+def read_player_csv(filename_or_dataframe, platform, game_mode):
+
+    if isinstance(filename_or_dataframe, basestring):
+        df = pd.read_csv(filename_or_dataframe)
     else:
-        df = frame_or_csv
+        df = filename_or_dataframe
     df_platform = select_rows_by_platform(df, platform)
+    df_id_vars = df_platform[ID_COLUMNS].copy()
+    df_dates = df_platform[DATE_COLUMNS].copy()
+    df_dates.loc[:, DATE_COLUMNS] = df_dates[DATE_COLUMNS].copy().apply(pd.to_datetime)
     df_stats = select_stats_columns_by_game_mode(df_platform, game_mode)
-    df_platform = df_platform.drop(df_stats.columns, axis=1)
-    df_platform = df_platform.drop(df_platform.columns[df_platform.columns.str.endswith('has_played')], axis=1)
-    df_platform = df_platform.join(df_stats)
-    for date_column in DATE_COLUMNS:
-        df_platform[date_column] = pd.to_datetime(df_platform[date_column])
-    return df_platform
+    return pd.concat([df_dates, df_id_vars, df_stats], axis=1)
 
 

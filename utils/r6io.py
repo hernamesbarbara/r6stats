@@ -56,9 +56,9 @@ def has_playtime(frame, game_mode):
     mask2 = frame['stats.{}.has_played'.format(game_mode)]==True
     return frame[(mask1&mask2)]
 
-def read_player_csv(filename_or_dataframe, platform, game_mode=None):
+def read_player_csv(filename_or_dataframe, platform, game_mode=None, **kwargs):
     if isinstance(filename_or_dataframe, basestring):
-        frame = pd.read_csv(filename_or_dataframe)
+        frame = pd.read_csv(filename_or_dataframe, **kwargs)
     else:
         frame = filename_or_dataframe
     df_platform = select_rows_by_platform(frame, platform)

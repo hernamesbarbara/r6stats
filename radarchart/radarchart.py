@@ -5,55 +5,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-class RadarChart(object):
-    """
-    fig = plt.figure(figsize=(6, 6))
-
-    titles = list("ABCDE")
-
-    radar = RadarChart(fig, titles)
-    radar.plot([1, 3, 2, 5, 4],  "-", lw=2, color="b", alpha=0.4, label="first")
-    radar.plot([2.3, 2, 3, 3, 2],"-", lw=2, color="r", alpha=0.4, label="second")
-    radar.plot([3, 4, 3, 4, 2], "-", lw=2, color="g", alpha=0.4, label="third")
-    """
-
-    def __init__(self, fig, titles, labels=None, rect=None):
+class Radar(object):
+    def __init__(self, fig, titles, labels, rotation=0, rect=None):
         if rect is None:
             rect = [0.05, 0.05, 0.95, 0.95]
 
         self.n = len(titles)
-        self.angles = np.arange(90, 90+360, 360.0/self.n)
-        if labels is None:
-            self.labels = ["" for _ in self.angles]
-        else:
-            self.labels = labels
-        self.axes = [fig.add_axes(rect, projection="polar", label="axes{}".format(i)) for i in range(self.n)]
+        self.angles = np.arange(0, 360, 360.0/self.n)
+        self.axes = [fig.add_axes(rect, projection="polar", label="axes{}".format(i)) 
+                         for i in range(self.n)]
+        if not len(labels):
+            labels = [ [""]*self.n for i in range(self.n)]
 
         self.ax = self.axes[0]
-        self.ax.set_thetagrids(self.angles, labels=titles, fontsize=14)
+        self.ax.set_thetagrids(self.angles, labels=titles, fontsize=10)
 
         for ax in self.axes[1:]:
             ax.patch.set_visible(False)
             ax.grid("off")
             ax.xaxis.set_visible(False)
 
-        for ax, angle, label in zip(self.axes, self.angles, self.labels):
-            ax.set_rgrids(range(1, 6), angle=angle, labels=label)
+        for ax, angle, label in zip(self.axes, self.angles, labels):
+            ax.set_rgrids(range(1, self.n+1), angle=angle, labels=label)
             ax.spines["polar"].set_visible(False)
-            ax.set_ylim(0, 5)
+            ax.set_ylim(0, self.n)
+            ax.set_theta_offset(np.deg2rad(rotation))
 
-    def plot(self, values, *args, **kwargs):
+    def plot(self, values, *args, **kw):
         angle = np.deg2rad(np.r_[self.angles, self.angles[0]])
         values = np.r_[values, values[0]]
-        self.ax.plot(angle, values, *args, **kwargs)
-
-    def show(self):
-        self.ax.legend()
-        plt.show(1)
-
-    def save(self, outfile='radarchart.png'):
-        fig.savefig(outfile, dpi=100)
-        print "saved {}".format(outfile)
-
-    def clf(self):
-        plt.clf()
+        self.ax.plot(angle, values, *args, **kw)

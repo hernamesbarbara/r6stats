@@ -32,7 +32,7 @@ def columns_for_stats(frame, subset=['progression', 'overall', 'casual', 'ranked
             cols += columns[columns.str.startswith('stats.casual')].tolist()
         if stats_type == 'ranked':
             cols += columns[columns.str.startswith('stats.ranked')].tolist()
-    return cols
+    return columns[columns.isin(cols)]
 
 def calc_total_playtime(frame):
     cols = [col for col in frame.columns if 'playtime' in col]

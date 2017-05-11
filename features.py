@@ -24,23 +24,15 @@ def columns_for_stats(frame, subset=['progression', 'overall', 'casual', 'ranked
             cols += columns[columns.str.startswith('stats.ranked')].tolist()
     return columns[columns.isin(cols)]
 
-def normalize_for_playtime(value, frame):
-    value = value.copy()
-    idx = value.index
-    if value.name.startswith('stats.overall') or value.name.startswith('stats.progression'):
-        playtime = frame.ix[idx, 'stats.overall.playtime']
-    elif value.name.startswith('stats.ranked'):
-        playtime = frame.ix[idx, 'stats.ranked.playtime']
-    else:
-        playtime = frame.ix[idx, 'stats.casual.playtime']
-    return value / playtime
-
 def combine_ranked_and_casual(frame, min_playtime=120):
     frame = frame.copy()
-    frame['stats.overall.playtime'] = frame[['stats.casual.playtime','stats.ranked.playtime']].sum(1)
+    playtime = frame[['stats.casual.playtime','stats.ranked.playtime']].sum(1)
+    frame['stats.overall.playtime.secs'] = playtime
+    frame['stats.overall.playtime.mins'] = playtime / 60. 
+    frame['stats.overall.playtime.hours'] = playtime / 60. / 60.
 
     # drop players who have played less than 2 hours
-    frame = frame[frame['stats.overall.playtime']>=min_playtime]
+    frame = frame[frame['stats.overall.playtime.mins']>=min_playtime]
 
     # combine stats from both game modes just to keep it simple
     frame['stats.overall.kills'] = frame[['stats.casual.kills','stats.ranked.kills']].sum(1)

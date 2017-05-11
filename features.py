@@ -24,13 +24,6 @@ def columns_for_stats(frame, subset=['progression', 'overall', 'casual', 'ranked
             cols += columns[columns.str.startswith('stats.ranked')].tolist()
     return columns[columns.isin(cols)]
 
-def calc_total_playtime(frame):
-    if 'stats.overall.playtime' in frame.columns:
-        return frame['stats.overall.playtime']
-    else:
-        cols = [col for col in frame.columns if 'playtime' in col]
-        return pd.Series(frame[cols].sum(1), name='stats.overall.playtime')
-
 def normalize_for_playtime(value, frame):
     value = value.copy()
     idx = value.index
@@ -58,7 +51,7 @@ def combine_ranked_and_casual(frame, min_playtime=120):
 
     frame['stats.overall.kd'] = frame['stats.overall.kills'] / frame['stats.overall.deaths']
     frame['stats.overall.wlr'] = frame['stats.overall.wins'] / frame['stats.overall.losses']
-    cols = [col for col in df_stats.columns if col.startswith('stats.overall') or col.startswith('stats.progression')]
+    cols = [col for col in frame.columns if col.startswith('stats.overall') or col.startswith('stats.progression')]
     return frame[cols]
 
 

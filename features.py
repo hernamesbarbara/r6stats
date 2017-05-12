@@ -42,7 +42,10 @@ def combine_ranked_and_casual(frame, min_playtime=120):
     frame['stats.overall.wins'] = frame[['stats.casual.wins','stats.ranked.wins']].sum(1)
 
     frame['stats.overall.kd'] = frame['stats.overall.kills'] / frame['stats.overall.deaths']
+    frame['stats.overall.kd'] = np.where((frame['stats.overall.kills']>0) & (frame['stats.overall.deaths']==0), 1.0, frame['stats.overall.kd'])
+
     frame['stats.overall.wlr'] = frame['stats.overall.wins'] / frame['stats.overall.losses']
+    frame['stats.overall.wlr'] = np.where((frame['stats.overall.wins']>0) & (frame['stats.overall.losses']==0), 1.0, frame['stats.overall.wlr'])
     cols = [col for col in frame.columns if col.startswith('stats.overall') or col.startswith('stats.progression')]
     return frame[cols]
 

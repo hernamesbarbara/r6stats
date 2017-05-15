@@ -79,8 +79,11 @@ def add_overall_totals(frame):
     frame['stats.normalized.points.perbullet_fired'] = \
         frame['stats.overall.points'] / frame['stats.overall.bullets_fired']
 
-    frame['stats.normalized.aggression'] = frame['stats.overall.points'] / frame['stats.overall.engagements']
-    frame['stats.normalized.mobility'] = frame['stats.overall.engagements'] / (frame['stats.overall.steps_moved'].abs() / frame['stats.overall.playtime.hours'])
+    frame['stats.normalized.aggression'] = \
+        frame['stats.overall.points'] / frame['stats.overall.engagements']
+    
+    frame['stats.normalized.mobility'] = \
+        frame['stats.overall.engagements'] / (frame['stats.overall.steps_moved'].abs() / frame['stats.overall.playtime.hours'])
     frame = frame.ix[:,frame.columns.sort_values()]
     return frame
 
@@ -88,7 +91,7 @@ def fillna_and_apply(series, func, na_value=0):
     series = series.fillna(na_value)
     return series.apply(func)
 
-def drop_players_with_low_playtime(frame, min_hours=10.0, copy=True):
+def drop_players_with_low_playtime(frame, min_hours=24.0, copy=True):
     if copy:
         frame = frame.copy()
         return frame[frame['stats.overall.playtime.hours']>=min_hours]
@@ -128,5 +131,5 @@ if __name__ == '__main__':
     print "Reading {}".format(infile)
     df = pd.read_csv(infile)
     df = get_features_dataframe(df, verbose=True)
-    df.to_csv(outfile, index=True, encoding='utf-8')
-    print "Saved {} rows to {}".format(len(df), outfile)
+    # df.to_csv(outfile, index=True, encoding='utf-8')
+    # print "Saved {} rows to {}".format(len(df), outfile)

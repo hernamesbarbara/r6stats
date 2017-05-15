@@ -9,55 +9,114 @@ import pandas as pd
 from sklearn import preprocessing
 from utils import r6io
 
-def columns_for_stats(frame, subset=['progression', 'overall', 'casual', 'ranked']):
-    cols = []
-    columns = frame.columns.copy()
-    columns = columns[columns.str.endswith('has_played')==False]
-    for stats_type in subset:
-        if stats_type == 'overall':
-            cols += columns[columns.str.startswith('stats.overall')].tolist()
-        if stats_type == 'progression':
-            cols += columns[columns.str.startswith('stats.progression')].tolist()
-        if stats_type == 'casual':
-            cols += columns[columns.str.startswith('stats.casual')].tolist()
-        if stats_type == 'ranked':
-            cols += columns[columns.str.startswith('stats.ranked')].tolist()
-    return columns[columns.isin(cols)]
+pd.options.display.width = 200
+pd.options.display.max_colwidth = 100
+pd.options.display.max_columns = 60
 
-def combine_ranked_and_casual(frame, min_playtime=120):
-    frame = frame.copy()
-    playtime = frame[['stats.casual.playtime','stats.ranked.playtime']].sum(1)
-    frame['stats.overall.playtime.secs'] = playtime
-    frame['stats.overall.playtime.mins'] = playtime / 60. 
-    frame['stats.overall.playtime.hours'] = playtime / 60. / 60.
+DATA_TYPES = {
+    "ubisoft_id": np.unicode,
+    "stats.overall.bullets_hit": np.int64,
+    "stats.ranked.deaths": np.int64,
+    "stats.progression.level": np.int64,
+    "stats.casual.wlr": np.float64,
+    "stats.overall.penetration_kills": np.int64,
+    "updated_at": pd.to_datetime,
+    "stats.ranked.losses": np.int64,
+    "stats.overall.melee_kills": np.int64,
+    "stats.casual.has_played": np.bool,
+    "stats.overall.bullets_fired": np.int64,
+    "stats.ranked.wins": np.int64,
+    "stats.overall.headshots": np.int64,
+    "indexed_at": pd.to_datetime,
+    "stats.ranked.kd": np.float64,
+    "platform": np.unicode,
+    "stats.ranked.wlr": np.float64,
+    "username": np.unicode,
+    "stats.overall.revives": np.int64,
+    "stats.casual.playtime": np.int64,
+    "stats.casual.wins": np.float64,
+    "stats.progression.xp": np.int64,
+    "stats.ranked.playtime": np.int64,
+    "stats.overall.assists": np.int64,
+    "stats.overall.barricades_built": np.int64,
+    "stats.casual.losses": np.int64,
+    "stats.casual.kills": np.int64,
+    "stats.casual.deaths": np.int64,
+    "stats.overall.suicides": np.int64,
+    "stats.overall.reinforcements_deployed": np.int64,
+    "stats.casual.kd": np.float64,
+    "stats.overall.steps_moved": np.int64,
+    "stats.ranked.kills": np.int64,
+    "stats.ranked.has_played": np.bool
+}
 
-    # drop players who have played less than 2 hours
-    frame = frame[frame['stats.overall.playtime.mins']>=min_playtime]
+def add_overall_totals(frame):
+    frame = frame.fillna(0)
+    frame = frame.replace(np.inf, 0)
+    frame['stats.overall.playtime.hours'] = (frame[['stats.casual.playtime', 'stats.ranked.playtime']].sum(1)) / 60. / 60.
+    frame['stats.overall.steps_moved'] = frame['stats.overall.steps_moved'].abs()
+    frame['stats.overall.kills'] = frame[['stats.ranked.kills', 'stats.casual.kills']].sum(1).astype(np.int64)
+    frame['stats.overall.deaths'] = frame[['stats.ranked.deaths', 'stats.casual.deaths']].sum(1).astype(np.int64)
+    frame['stats.overall.wins'] = frame[['stats.ranked.wins', 'stats.casual.wins']].sum(1).astype(np.int64)
+    frame['stats.overall.losses'] = frame[['stats.ranked.losses', 'stats.casual.losses']].sum(1).astype(np.int64)
+    frame['stats.overall.points'] = frame[['stats.overall.assists', 'stats.overall.kills']].sum(1).astype(np.int64)
+    defensive_actions = ['stats.overall.reinforcements_deployed', 'stats.overall.revives', 'stats.overall.barricades_built']
+    frame['stats.overall.defensive_actions'] = frame[defensive_actions].sum(1).astype(np.int64)
 
-    # combine stats from both game modes just to keep it simple
-    frame['stats.overall.kills'] = frame[['stats.casual.kills','stats.ranked.kills']].sum(1)
-    frame['stats.overall.deaths'] = frame[['stats.casual.deaths','stats.ranked.deaths']].sum(1)
+    frame['stats.overall.engagements'] = frame[['stats.overall.kills', 'stats.overall.deaths']].sum(1)
 
-    frame['stats.overall.losses'] = frame[['stats.casual.losses','stats.ranked.losses']].sum(1)
-    frame['stats.overall.wins'] = frame[['stats.casual.wins','stats.ranked.wins']].sum(1)
+    frame['stats.normalized.accuracy'] = frame['stats.overall.bullets_hit'] / frame['stats.overall.bullets_fired']
+    frame['stats.normalized.points.perhour'] = frame['stats.overall.points'] / frame['stats.overall.playtime.hours']
+    frame['stats.normalized.deaths.perhour'] = frame['stats.overall.deaths'] / frame['stats.overall.playtime.hours']
+    frame['stats.normalized.kills.perhour'] = frame['stats.overall.kills'] / frame['stats.overall.playtime.hours']
+    frame['stats.normalized.wins.perhour'] = frame['stats.overall.wins'] / frame['stats.overall.playtime.hours']
+    frame['stats.normalized.losses.perhour'] = frame['stats.overall.losses'] / frame['stats.overall.playtime.hours']
 
-    frame['stats.overall.kd'] = frame['stats.overall.kills'] / frame['stats.overall.deaths']
-    frame['stats.overall.kd'] = np.where((frame['stats.overall.kills']>0) & (frame['stats.overall.deaths']==0), 1.0, frame['stats.overall.kd'])
+    mask = (frame['stats.overall.kills']>0) & (frame['stats.overall.deaths']==0)
+    frame['stats.normalized.kd'] = np.where(mask, 1.0, frame['stats.overall.kills'] / frame['stats.overall.deaths'])
 
-    frame['stats.overall.wlr'] = frame['stats.overall.wins'] / frame['stats.overall.losses']
-    frame['stats.overall.wlr'] = np.where((frame['stats.overall.wins']>0) & (frame['stats.overall.losses']==0), 1.0, frame['stats.overall.wlr'])
-    cols = [col for col in frame.columns if col.startswith('stats.overall') or col.startswith('stats.progression')]
-    return frame[cols]
+    mask = (frame['stats.overall.wins']>0) & (frame['stats.overall.losses']==0)
+    frame['stats.normalized.wlr'] = np.where(mask, 1.0, frame['stats.overall.wins'] / frame['stats.overall.losses'])
 
+    frame['stats.normalized.defensive_actions.perhour'] = \
+        frame['stats.overall.defensive_actions'] / frame['stats.overall.playtime.hours']
 
-for platform in ('ps4', 'xone', 'uplay'):
-    outfile = "./data/overall_stats_for_{}.csv".format(platform)
+    frame['stats.normalized.points.perbullet_fired'] = \
+        frame['stats.overall.points'] / frame['stats.overall.bullets_fired']
 
-    df = r6io.read_player_csv('./data/leaderboard-pages.csv', platform)
-    numbers = columns_for_stats(df)
-    df_stats = df[numbers].copy()
-    df_stats = df_stats.fillna(0)
-    df_overall = combine_ranked_and_casual(df_stats)
-    df_overall = df_overall.replace(np.inf,0)    
-    df_overall.to_csv(outfile)
-    print "saved {} rows to {}".format(len(df_overall), outfile)
+    frame['stats.normalized.aggression'] = frame['stats.overall.points'] / frame['stats.overall.engagements']
+    frame['stats.normalized.mobility'] = frame['stats.overall.engagements'] / (frame['stats.overall.steps_moved'].abs() / frame['stats.overall.playtime.hours'])
+    frame = frame.ix[:,frame.columns.sort_values()]
+    return frame
+
+def fillna_and_apply(series, func, na_value=0):
+    series = series.fillna(na_value)
+    return series.apply(func)
+
+def drop_players_with_low_playtime(frame, min_hours=10.0, copy=True):
+    if copy:
+        frame = frame.copy()
+        return frame[frame['stats.overall.playtime.hours']>=min_hours]
+    else:
+        frame = frame[frame['stats.overall.playtime.hours']>=min_hours]
+        return frame
+
+if __name__ == '__main__':
+    
+    infile = sys.argv[1]
+    f_name, _ = os.path.splitext(infile)
+    outfile = "{}-features.csv".format(f_name)
+    
+    print "Reading {}".format(infile)
+    df = pd.read_csv(infile)
+    print "Casting columns to data types"
+    for col in df.columns:
+        func = DATA_TYPES[col]
+        df[col] = fillna_and_apply(df[col], func, na_value=0)
+    print "Adding overall sums for each metric"
+    df = add_overall_totals(df)
+    n  = len(df)
+    df = drop_players_with_low_playtime(df)
+    print "Dropped {} rows with too few hours of playtime".format(n-len(df))
+    df.to_csv(outfile, index=True, encoding='utf-8')
+    print "Saved {} rows to {}".format(len(df), outfile)

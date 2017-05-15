@@ -37,7 +37,8 @@ def read_nested_write_flat(infile, outfile):
     print "saved records to {}".format(outfile.name)
 
 def jsonl_to_csv(infile_jsonl, outfile_csv):
-    pd.read_json(infile_jsonl, lines=True).to_csv(outfile_csv, index=False, encoding='utf-8')
+    pd.read_json(infile_jsonl, lines=True)\
+        .to_csv(outfile_csv, index=False, encoding='utf-8')
     print "saved records to {}".format(outfile_csv)
     
 def select_rows_by_platform(frame, platform):
@@ -51,12 +52,7 @@ def select_stats_columns(frame):
     frame = frame.ix[:, stats_cols]
     return frame.astype(np.float64).fillna(0)
 
-def has_playtime(frame, game_mode):
-    mask1 = frame['stats.{}.playtime'.format(game_mode)].fillna(0)>0
-    mask2 = frame['stats.{}.has_played'.format(game_mode)]==True
-    return frame[(mask1&mask2)]
-
-def read_player_csv(filename_or_dataframe, platform, game_mode=None, **kwargs):
+def read_player_csv(filename_or_dataframe, platform, **kwargs):
     if isinstance(filename_or_dataframe, basestring):
         frame = pd.read_csv(filename_or_dataframe, **kwargs)
     else:
@@ -73,15 +69,6 @@ def read_player_csv(filename_or_dataframe, platform, game_mode=None, **kwargs):
     df = df.drop_duplicates(['username'])
     bools = df.columns[df.columns.str.endswith('has_played')]
     df[bools] = df[bools].astype(np.bool)
-    if game_mode:
-        if game_mode == 'ranked':
-            # keep only ranked players with playtime. drop all casual columns.
-            df = has_playtime(df, 'ranked')
-            df = df.drop(df.columns[df.columns.str.contains("casual")], axis=1)
-        else:
-            # keep only casual players with playtime. drop all ranked columns.
-            df = has_playtime(df, 'casual')
-            df = df.drop(df.columns[df.columns.str.contains("ranked")], axis=1)
     return df
 
 

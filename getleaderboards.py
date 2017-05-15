@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
-"""newgetleaderboards.py
+"""getleaderboards.py
 """
 import sys
 import os
-import json
 import requests
 import collections
 from r6api import R6Api
-from bandit import Bandit
+try:
+    import ujson as json
+except ImportError:
+    import json
 
-def dump_jsonl(data, outfile):
-    with open(outfile, 'a') as outfile:
-        json.dump(data, outfile)
-        outfile.write(os.linesep)
+from utils import r6io
 
-def get_all_pages(leaderboard, outfile):
+def get_all_pages(r6, leaderboard, outfile):
     page = r6.leaderboards[leaderboard].GET(params={'page': 1})
     for player in page['players']:
-        dump_jsonl(player, outfile)
+        r6io.dump_jsonl_stream(player, outfile)
     
     total_pages = page['meta']['total_pages']
     next_page = page['meta']['next_page']
@@ -30,7 +29,7 @@ def get_all_pages(leaderboard, outfile):
             page = r6.leaderboards[leaderboard].GET(params={'page': i})
             for player in page['players']:
                 try:
-                    dump_jsonl(player, outfile)
+                    r6io.dump_jsonl_stream(player, outfile)
                 except Exception, err:
                     print str(err)
                     continue
@@ -38,14 +37,17 @@ def get_all_pages(leaderboard, outfile):
             print str(err)
 
 def main():
-    for leaderboard in ('casual', 'ranked', 'general'):
-        print "*"*80
-        print leaderboard.upper()
-        print "*"*80
-        get_all_pages(leaderboard, bandit.output_dir+'leaderboard-pages.jsonl')
+    # Wall time: 6h 50min 25s
+    r6 = R6Api()
+    outfile_name = sys.argv[1]
+    with open(outfile_name, "a") as outfile:
+        for leaderboard in ('casual', 'ranked', 'general'):
+            print "*"*80
+            print leaderboard.upper()
+            print "*"*80
+            get_all_pages(r6, leaderboard, outfile)
+    print "results written to: {}".format(outfile_name)
     sys.exit(0)
 
 if __name__ == '__main__':
-    r6 = R6Api()
-    bandit = Bandit()
     main()

@@ -4,21 +4,7 @@
 """
 import sys
 import os
-import numpy as np
-import pandas as pd
-from pandas.io.json import nested_to_record
-from bandit import Bandit
-try:
-    import ujson as json
-except ImportError:
-    import json
-
 from utils import r6io
-
-pd.options.display.width = 200
-pd.options.display.max_colwidth = 75
-
-
 
 if __name__ == '__main__':
     infile = sys.argv[1]

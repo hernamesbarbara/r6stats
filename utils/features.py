@@ -6,12 +6,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from sklearn import preprocessing
 from utils import r6io
-
-pd.options.display.width = 200
-pd.options.display.max_colwidth = 100
-pd.options.display.max_columns = 60
 
 DATA_TYPES = {
     "ubisoft_id": np.unicode,
@@ -101,22 +96,37 @@ def drop_players_with_low_playtime(frame, min_hours=10.0, copy=True):
         frame = frame[frame['stats.overall.playtime.hours']>=min_hours]
         return frame
 
+def get_features_dataframe(frame, verbose=False):
+    nrow = len(frame)
+    if verbose:
+        print "Casting columns to data types"
+    for col in frame.columns:
+        func = DATA_TYPES[col]
+        frame[col] = fillna_and_apply(frame[col], func, na_value=0)
+    if verbose:
+        print "Adding overall sums for each metric"
+    frame = add_overall_totals(frame)
+    frame = drop_players_with_low_playtime(frame)
+    if verbose:
+        print "Dropped {} rows with low playtime".format(nrow-len(frame))
+    return frame
+
 if __name__ == '__main__':
-    
+    """
+    In [3]: %time %run features.py data/leaderboard-pages.csv
+    Reading data/leaderboard-pages.csv
+    Casting columns to data types
+    Adding overall sums for each metric
+    Dropped 49155 rows with low playtime
+    Saved 723121 rows to data/leaderboard-pages-features.csv
+    CPU times: user 3min 17s, sys: 6.14 s, total: 3min 23s
+    Wall time: 3min 23s
+    """
     infile = sys.argv[1]
     f_name, _ = os.path.splitext(infile)
     outfile = "{}-features.csv".format(f_name)
-    
     print "Reading {}".format(infile)
     df = pd.read_csv(infile)
-    print "Casting columns to data types"
-    for col in df.columns:
-        func = DATA_TYPES[col]
-        df[col] = fillna_and_apply(df[col], func, na_value=0)
-    print "Adding overall sums for each metric"
-    df = add_overall_totals(df)
-    n  = len(df)
-    df = drop_players_with_low_playtime(df)
-    print "Dropped {} rows with too few hours of playtime".format(n-len(df))
+    df = get_features_dataframe(df, verbose=True)
     df.to_csv(outfile, index=True, encoding='utf-8')
     print "Saved {} rows to {}".format(len(df), outfile)

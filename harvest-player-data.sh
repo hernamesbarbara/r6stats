@@ -12,5 +12,3 @@ fi
 echo -e "Running json2csv.py\n"
 python json2csv.py "data/leaderboard-pages.jsonl"
 
-echo -e "Running features.py\n"
-python features.py "data/leaderboard-pages.csv"

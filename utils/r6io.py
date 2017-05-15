@@ -52,26 +52,5 @@ def select_stats_columns(frame):
     frame = frame.ix[:, stats_cols]
     return frame.astype(np.float64).fillna(0)
 
-def read_player_csv(filename_or_dataframe, platform, **kwargs):
-    if isinstance(filename_or_dataframe, basestring):
-        frame = pd.read_csv(filename_or_dataframe, **kwargs)
-    else:
-        frame = filename_or_dataframe
-    df_platform = select_rows_by_platform(frame, platform)
-    df_id_vars = df_platform[DIMENSION_COLUMNS].copy()
-    df_dates = df_platform[DATE_COLUMNS].copy()
-    df_dates.loc[:, DATE_COLUMNS] = df_dates[DATE_COLUMNS].copy().apply(pd.to_datetime)
-    df_stats = select_stats_columns(df_platform)
-    df = pd.concat([df_dates, df_id_vars, df_stats], axis=1)
-    df['updated_at'] = df[DATE_COLUMNS].max(axis=1)
-    df = df.drop(['indexed_at'], axis=1)
-    df = df.sort_values(by=['username', 'updated_at'], ascending=[True, False])
-    df = df.drop_duplicates(['username'])
-    bools = df.columns[df.columns.str.endswith('has_played')]
-    df[bools] = df[bools].astype(np.bool)
-    return df
-
-
-
 
 

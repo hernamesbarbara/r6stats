@@ -2,10 +2,17 @@
 # -*- coding: utf-8 -*- 
 
 cleanup() {
-    # example cleanup function
-    # rm -f /tmp/tempfile
-    echo -en "Exiting"
-    return $?
+    # cleanup function
+    # rm data/leaderboard-pages.jsonl
+    echo -en "\nCleaning up...\n"
+    local status="$?"
+    if [ "$status" -ne 0 ]; then
+        echo -en "Aborting...\n" >&2
+        echo -en "exit($status)\n" >&2
+    else
+        echo -en "exit(0)\n"
+    fi
+    return "$status"
 }
  
 control_c() {
@@ -13,16 +20,13 @@ control_c() {
     cleanup
     exit $?
 }
- 
-RAW_JSON="data/leaderboard-pages.jsonl"
 
-# trap keyboard interrupt (control-c)
-# will call control_c function
-trap control_c SIGINT
-main() {
+run_getleaderboards() {
+    RAW_JSON="data/leaderboard-pages.jsonl"
     if [ ! -f "$RAW_JSON" ]; then
         echo -e "Running getleaderboards.py...this will take a few hours...ZzzZ\n"
         ipython -c "%time %run getleaderboards.py $RAW_JSON"
+        return "$?"
     else
         while true; do
             read -rep $'Do you want to re-download data from r6stats (takes several hours)? (Y/N)\n' yn
@@ -32,16 +36,22 @@ main() {
                 * ) echo -e "Answer. Dammit.\n";;
             esac
         done
+        return "$?"
     fi
+}
+ 
+# trap keyboard interrupt (control-c)
+# will call control_c function
+trap control_c SIGINT
+main() {
+    run_getleaderboards
+    if [ "$?" -eq 0 ]; then
+        echo -en "running json2csv.py\n"
+        ipython -c "%time %run json2csv.py $RAW_JSON"
 
-    echo "Running json2csv.py..."
-    ipython -c "%time %run json2csv.py $RAW_JSON"
-
-    echo "Running features.py..."
-    ipython -c "%time %run features.py data/leaderboard-pages.csv"
-
-    echo "done"
-    return 0    
+        echo -en "running features.py\n"
+        ipython -c "%time %run features.py data/leaderboard-pages.csv"
+    fi
 }
 
 main "$@"

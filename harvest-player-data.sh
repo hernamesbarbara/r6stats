@@ -4,8 +4,8 @@
 cleanup() {
     # cleanup function
     # rm data/leaderboard-pages.jsonl
-    echo -en "\nCleaning up...\n"
     local status="$?"
+    echo -en "\nCleaning up...\n"
     if [ "$status" -ne 0 ]; then
         echo -en "Aborting...\n" >&2
         echo -en "exit($status)\n" >&2

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*- 
 
+# this calls the getleaderboards.py script and saves all leaderboard data
+# to an output file. the data is saved as a .jsonl (line delim json)
+# 
+
 cleanup() {
     # cleanup function
     # rm data/leaderboard-pages.jsonl

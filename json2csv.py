@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 """json2csv.py
+
+* this one reads in the raw data in jsonl (line delim json) and converts it to csv.
+* the data is super nested, so it first flattens each line delim document in the 
+* input file. so you get 2 new files after you run this one.
+
 """
 import sys
 import os

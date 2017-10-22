@@ -7,7 +7,6 @@ import os
 import json
 import requests
 
-
 class DotDict(dict):
     """
     dict that supports both dot.notation and sub['notation']
@@ -26,7 +25,7 @@ def GET(url, params={}):
     try:
         data = requests.get(url, params=params).json()
         return DotDict(data)
-    except Exception, err:
+    except Exception as err:
         r = requests.Request('GET', url, params=params).prepare()
         raise Exception("GET exception", r.url)
 

@@ -8,13 +8,15 @@ import requests
 import arrow
 import numpy as np
 import pandas as pd
-from r6api import R6Api
+from r6api.r6api import R6Api
 from utils import r6io
 try:
     import ujson as json
 except ImportError:
     import json
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+print(DIR_PATH)
 
 SEEN = "seen.txt"
 SEEN_PAGES = "seen_pages.json"
@@ -88,3 +90,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

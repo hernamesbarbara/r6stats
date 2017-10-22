@@ -89,7 +89,7 @@ def add_overall_totals(frame):
     
     frame['stats.normalized.mobility'] = \
         frame['stats.overall.engagements'] / (frame['stats.overall.steps_moved'].abs() / frame['stats.overall.playtime.hours'])
-    frame = frame.ix[:,frame.columns.sort_values()]
+    frame = frame.loc[:,frame.columns.sort_values()]
     return frame
 
 def fillna_and_apply(series, func, na_value=0):
@@ -107,27 +107,27 @@ def drop_players_with_low_playtime(frame, min_hours=24.0, copy=True):
 def get_features_dataframe(frame, verbose=False):
     nrow = len(frame)
     if verbose:
-        print "Casting columns to data types"
+        print("Casting columns to data types")
     for col in frame.columns:
         func = DATA_TYPES[col]
         frame[col] = fillna_and_apply(frame[col], func, na_value=0)
     if verbose:
-        print "Adding overall sums for each metric"
+        print("Adding overall sums for each metric")
     frame = add_overall_totals(frame)
     frame = drop_players_with_low_playtime(frame)
     if verbose:
-        print "Dropped {} rows with low playtime".format(nrow-len(frame))
+        print("Dropped {} rows with low playtime".format(nrow-len(frame)))
     return frame
 
 def main():
     infile = sys.argv[1]
     f_name, _ = os.path.splitext(infile)
     outfile = "{}-features.csv".format(f_name)
-    print "Reading {}".format(infile)
+    print("Reading {}".format(infile))
     df = pd.read_csv(infile)
     df = get_features_dataframe(df, verbose=True)
     df.to_csv(outfile, index=True, encoding='utf-8')
-    print "Saved {} rows to {}".format(len(df), outfile)
+    print("Saved {} rows to {}".format(len(df), outfile))
 
 if __name__ == '__main__':
     main()

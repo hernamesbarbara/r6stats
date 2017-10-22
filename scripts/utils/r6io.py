@@ -6,7 +6,7 @@ import sys
 import os
 import numpy as np
 import pandas as pd
-from pandas.io.json import nested_to_record
+from pandas.io.json.normalize import nested_to_record
 try:
     import ujson as json
 except ImportError:
@@ -34,12 +34,12 @@ def read_nested_write_flat(infile, outfile):
         with open(outfile, 'a') as outfile:
             for record in read_jsonl_stream(infile):
                 dump_jsonl_stream(nested_to_record(record), outfile)
-    print "saved records to {}".format(outfile.name)
+    print("saved records to {}".format(outfile.name))
 
 def jsonl_to_csv(infile_jsonl, outfile_csv):
     pd.read_json(infile_jsonl, lines=True)\
         .to_csv(outfile_csv, index=False, encoding='utf-8')
-    print "saved records to {}".format(outfile_csv)
+    print("saved records to {}".format(outfile_csv))
     
 def select_rows_by_platform(frame, platform):
     mask = frame['platform'].astype(str).fillna('NONE') == platform

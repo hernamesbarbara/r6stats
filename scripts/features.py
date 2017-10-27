@@ -12,6 +12,8 @@ import sys
 import numpy as np
 import pandas as pd
 from utils import r6io
+from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 
 DATA_TYPES = {
     "ubisoft_id": np.unicode,
@@ -49,6 +51,18 @@ DATA_TYPES = {
     "stats.ranked.kills": np.int64,
     "stats.ranked.has_played": np.bool
 }
+
+def scale_series(series):
+    series = series.copy().astype(float).fillna(series.mean())
+    values_scaled = StandardScaler().fit_transform(series.values.reshape(-1,1))
+    name = series.name
+    return pd.Series(values_scaled[:,0], name=name+'.scaled')
+
+def normalize_series(series):
+    name = series.name
+    series = series.copy().astype(float).fillna(series.mean())
+    series = preprocessing.normalize(series.values.reshape(1,-1))[0,:]
+    return pd.Series(series, name=name+'.normed')
 
 def add_overall_totals(frame):
     frame = frame.fillna(0)
@@ -89,6 +103,15 @@ def add_overall_totals(frame):
     
     frame['stats.normalized.mobility'] = \
         frame['stats.overall.engagements'] / (frame['stats.overall.steps_moved'].abs() / frame['stats.overall.playtime.hours'])
+
+    xp_scaled = scale_series(frame['stats.progression.xp'])
+    frame[xp_scaled.name] = xp_scaled
+
+    pt_scaled = scale_series(frame['stats.overall.playtime.hours'])
+    frame[pt_scaled.name] = pt_scaled
+
+    level_scaled = scale_series(frame['stats.progression.level'])
+    frame[level_scaled.name] = level_scaled
     frame = frame.loc[:,frame.columns.sort_values()]
     return frame
 
@@ -136,10 +159,15 @@ def main():
         pass
     else:
         id_cols = ['ubisoft_id', 'platform']
-        features = [col for col in df.columns if '.normalized.' in col ]
-        df = df.loc[:, id_cols+features]
+        features = []
+        feature_colname_contexts = ['.normalized.', '.wlr', '.scaled']
+        for column in df.columns:
+            if column in feature_colname_contexts:
+                features.append(column)
+        keep_cols = id_cols + sorted(features)
+        df = df.loc[:, keep_cols]
     
-    df.to_csv(outfile, index=True, encoding='utf-8')
+    df.to_csv(outfile, index=False, encoding='utf-8')
     print("Saved {} rows w/ {} columns to {}".format(len(df), len(df.columns), outfile))
 
 if __name__ == '__main__':

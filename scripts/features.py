@@ -126,8 +126,21 @@ def main():
     print("Reading {}".format(infile))
     df = pd.read_csv(infile)
     df = get_features_dataframe(df, verbose=True)
+
+    if len(sys.argv) > 2:
+        keep_all_columns  = sys.argv[2] == '--keep-all-cols'
+    else:
+        keep_all_columns = False
+
+    if keep_all_columns:
+        pass
+    else:
+        id_cols = ['ubisoft_id', 'platform']
+        features = [col for col in df.columns if '.normalized.' in col ]
+        df = df.loc[:, id_cols+features]
+    
     df.to_csv(outfile, index=True, encoding='utf-8')
-    print("Saved {} rows to {}".format(len(df), outfile))
+    print("Saved {} rows w/ {} columns to {}".format(len(df), len(df.columns), outfile))
 
 if __name__ == '__main__':
     main()

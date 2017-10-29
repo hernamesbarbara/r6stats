@@ -18,8 +18,8 @@ except ImportError:
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 print(DIR_PATH)
 
-SEEN = "seen.txt"
-SEEN_PAGES = "seen_pages.json"
+SEEN = "log/seen.txt"
+SEEN_PAGES = "log/seen_pages.json"
 
 def _seen_set():
     try:
@@ -46,7 +46,7 @@ def get_all_pages(r6, leaderboard, outfile):
     seen_pages = _seen_pages()
     first_page = seen_pages[leaderboard]+1
     with open(SEEN, 'a') as seen_file:
-        print "[{}]    Starting on page {}".format(_localtime(), first_page)    
+        print("[{}]    Starting on page {}".format(_localtime(), first_page))
         page = r6.leaderboards[leaderboard].GET(params={'page': first_page})
         for player in page['players']:
             if player['ubisoft_id'] not in seen:
@@ -56,9 +56,9 @@ def get_all_pages(r6, leaderboard, outfile):
         json.dump(seen_pages, open(SEEN_PAGES, "w"))
         total_pages = page['meta']['total_pages']
         next_page = page['meta']['next_page']
-        for i in xrange(next_page, total_pages+1):
+        for i in range(next_page, total_pages+1):
             if i % 100 == 0 or i == total_pages:
-                print "[{}]    {} => {} of {}".format(_localtime(), leaderboard, i, total_pages)
+                print("[{}]    {} => {} of {}".format(_localtime(), leaderboard, i, total_pages))
             try:
                 page = r6.leaderboards[leaderboard].GET(params={'page': i})
                 seen_pages[leaderboard] = i
@@ -68,12 +68,12 @@ def get_all_pages(r6, leaderboard, outfile):
                             r6io.dump_jsonl_stream(player, outfile)
                             seen.add(player['ubisoft_id'])
                             seen_file.write(player['ubisoft_id']+os.linesep)
-                    except Exception, err:
-                        print "[{}]    {}".format(_localtime(), str(err))
+                    except Exception as err:
+                        print("[{}]    {}".format(_localtime(), str(err)))
                         continue
                 json.dump(seen_pages, open(SEEN_PAGES, "w"))
-            except Exception, err:
-                print "[{}]    {}".format(_localtime(), str(err))
+            except Exception as err:
+                print("[{}]    {}".format(_localtime(), str(err)))
 
 
 def main():
@@ -81,11 +81,11 @@ def main():
     r6 = R6Api()
     with open(outfile_name, "a") as outfile:
         for leaderboard in ('casual', 'ranked', 'general'):
-            print "*"*80
-            print leaderboard.upper()
-            print "*"*80
+            print("*"*80)
+            print(leaderboard.upper())
+            print("*"*80)
             get_all_pages(r6, leaderboard, outfile)
-    print "[{}]    Results saved to: {}".format(_localtime(), outfile_name)
+    print("[{}]    Results saved to: {}".format(_localtime(), outfile_name))
     sys.exit(0)
 
 if __name__ == '__main__':

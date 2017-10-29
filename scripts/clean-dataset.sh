@@ -34,6 +34,8 @@ run_pipeline() {
     echo -e "running scripts/features.py\n"
     ipython3 -c "%time %run scripts/features.py $(readlink -f data/leaderboard-pages.csv) --keep-all-cols"
 
+    ipython3 -c "%time %run scripts/features.py $(readlink -f data/leaderboard-pages.csv)"
+
     echo -e "cleaning up...\n"
     # rm intermediary files. we don't need 'em.
     rm "$(readlink -f data/leaderboard-pages-flat.jsonl)"

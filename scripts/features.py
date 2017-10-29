@@ -145,25 +145,28 @@ def get_features_dataframe(frame, verbose=False):
 def main():
     infile = sys.argv[1]
     f_name, _ = os.path.splitext(infile)
-    outfile = "{}-features.csv".format(f_name)
     print("Reading {}".format(infile))
     df = pd.read_csv(infile)
     df = get_features_dataframe(df, verbose=True)
+    id_cols = ['ubisoft_id', 'platform']
 
     if len(sys.argv) > 2:
         keep_all_columns  = sys.argv[2] == '--keep-all-cols'
+        outfile = "{}-features.csv".format(f_name)
     else:
         keep_all_columns = False
+        outfile = "{}-features-only.csv".format(f_name)
 
     if keep_all_columns:
-        pass
+        cols = id_cols+sorted([col for col in df.columns if col not in id_cols])
+        df = df.loc[:, cols]
     else:
-        id_cols = ['ubisoft_id', 'platform']
         features = []
-        feature_colname_contexts = ['.normalized.', '.wlr', '.scaled']
+        feature_colname_contexts = ['.normalized.', '.wlr', '.scaled', '.normed']
         for column in df.columns:
-            if column in feature_colname_contexts:
-                features.append(column)
+            for colname_context in feature_colname_contexts:
+                if colname_context in column:
+                    features.append(column)
         keep_cols = id_cols + sorted(features)
         df = df.loc[:, keep_cols]
     

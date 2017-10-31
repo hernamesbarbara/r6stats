@@ -34,7 +34,7 @@ def coalesce_pages(infiles_list, outfile):
             r6io.read_nested_write_flat(infile, outfile)
             print('{}: success'.format(infile))
         except:
-            print(f'{}: error'.format(infile))
+            print('{}: error'.format(infile))
             continue
 
 if __name__ == '__main__':

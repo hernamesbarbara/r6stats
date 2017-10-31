@@ -20,7 +20,7 @@ except ImportError:
 def get_page(i):
     try: 
         players = r6.leaderboards[leaderboard].GET(params={'page': i})['players']
-        outfile = f'/tmp/{leaderboard}-page-{i:03}.jsonl'
+        outfile = '/tmp/{}-page-{:03}.jsonl'.format(leaderboard, i)
         with open(outfile, 'a') as o:
             for player in players:
                 r6io.dump_jsonl_stream(player, o)
@@ -32,9 +32,9 @@ def coalesce_pages(infiles_list, outfile):
     for infile in infiles_list:
         try:
             r6io.read_nested_write_flat(infile, outfile)
-            print(f'{infile}: success')
+            print('{}: success'.format(infile))
         except:
-            print(f'{infile}: error')
+            print(f'{}: error'.format(infile))
             continue
 
 if __name__ == '__main__':

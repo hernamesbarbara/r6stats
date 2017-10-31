@@ -34,7 +34,6 @@ def read_nested_write_flat(infile, outfile):
         with open(outfile, 'a') as outfile:
             for record in read_jsonl_stream(infile):
                 dump_jsonl_stream(nested_to_record(record), outfile)
-    print("saved records to {}".format(outfile.name))
 
 def jsonl_to_csv(infile_jsonl, outfile_csv):
     pd.read_json(infile_jsonl, lines=True)\

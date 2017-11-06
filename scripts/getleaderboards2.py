@@ -20,13 +20,21 @@ except ImportError:
 def get_page(i):
     try: 
         players = r6.leaderboards[leaderboard].GET(params={'page': i})['players']
-        outfile = '/tmp/{}-page-{:03}.jsonl'.format(leaderboard, i)
+        outfile = '/tmp/{}-page-{:05}.jsonl'.format(leaderboard, i)
         with open(outfile, 'a') as o:
             for player in players:
                 r6io.dump_jsonl_stream(player, o)
         return outfile
     except:
         return ''
+
+def get_last_page_file(leaderboard):
+    try:
+        filenames = glob.glob('/tmp/{}-page-*jsonl'.format(leaderboard))
+        filenames = sorted(filenames)
+        return max([int(f.split('.')[0].split('-')[-1]) for f in filenames])
+    except:
+        return 1
 
 def coalesce_pages(infiles_list, outfile):
     for infile in infiles_list:
@@ -40,7 +48,7 @@ def coalesce_pages(infiles_list, outfile):
 if __name__ == '__main__':
     r6 = R6Api()
     for leaderboard in ('casual', 'ranked', 'general'):
-        start_page = 1
+        start_page = get_last_page_file(leaderboard)
         end_page = r6.leaderboards[leaderboard].GET(params={'page': 1})['meta']['total_pages']
 
         pool = multiprocessing.Pool()

@@ -13,6 +13,16 @@ from concurrent.futures import as_completed
 import glob
 import shutil
 
+import logging
+import pygogo as gogo
+
+
+
+logger = gogo.Gogo(os.path.basename(__file__),
+    low_formatter=gogo.formatters.fixed_formatter,
+    high_formatter=gogo.formatters.fixed_formatter
+).logger
+
 def read_lines(filename):
     with open(filename, "r") as f:
         for i, line in enumerate(f.readlines()):
@@ -32,9 +42,7 @@ def get_request(url, params={}):
         s = requests.Session()
         return s.send(r.prepare())
     except Exception as err:
-        sys.stderr.write(str(err), url)
-        sys.stderr.write('error in get_request')
-        sys.stderr.flush()
+        logger.error(str(err))
         return None
 
 def dump_jsonl(data, outfile_name):
@@ -44,9 +52,7 @@ def dump_jsonl(data, outfile_name):
             outstream.write(os.linesep)
             return outfile_name
         except Exception as err:
-            sys.stderr.write('error in dump_jsonl')
-            sys.stderr.write(str(err))
-            sys.stderr.flush()
+            logger.error(str(err))
             return None
 
 def purge_files(list_of_files):
@@ -73,31 +79,40 @@ def job(url, outdir):
         outfile_name = '{}/page-{:07d}.jsonl'.format(outdir, page_number)
         r = get_request(url)
         if r is None:
-            return None
+            res = (None, url)
         else:
             data = r.json()
             meta = data.get('meta', {})
             meta['url'] = r.url
             data['meta'] = meta
             outfile_name = dump_jsonl(data, outfile_name)
-            return outfile_name
+            res = (outfile_name, url)
+        return res
 
-def main(urls):
+def main():
     """
     Create a thread pool and download specified urls
     """
-    outdir = 'data/'
+    url_file = sys.argv[1]
+    outdir   = sys.argv[2].strip('/')+'/'
+
+    url_tups = list(read_lines(url_file))
+    urls     = [tup[1] for tup in url_tups]
+    
     with ThreadPoolExecutor() as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
         for i, future in enumerate(as_completed(futures)):
-            res = future.result()
+            (outfile_name, url) = res = future.result()
             if i % 100 == 0:
-                print('processing request: ', i+1, res)
+                msg = "GET '{}' => '{}'".format(url, outfile_name)
+                logger.debug(msg)
 
     page_files = glob.glob(outdir+'*.jsonl')
-    combine_all_files(page_files, outdir+'combined-pages.jsonl', cleanup=True)
+    combined_filename = outdir+'combined-pages.jsonl'
+    combine_all_files(page_files, combined_filename, cleanup=True)
+
+    msg = 'merging {} files => {}'.format(len(page_files), combined_filename)
+    logger.info(msg)
  
 if __name__ == '__main__':
-    url_tups = list(read_lines('data/urls.txt'))
-    urls     = [tup[1] for tup in url_tups]
-    main(urls)
+    main()

@@ -9,3 +9,4 @@ numpy>=1.11.3
 arrow>=0.10.0
 scikit-learn>=0.18.1
 scipy>=0.19.1
+pygogo>=0.10.0

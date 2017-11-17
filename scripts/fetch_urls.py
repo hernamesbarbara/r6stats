@@ -91,15 +91,21 @@ def job(url, outdir):
 
 def main():
     """
-    Create a thread pool and download specified urls
+    Create thread pool w/ ThreadPoolExecutor & download urls in parallel.
     """
     url_file = sys.argv[1]
     outdir   = sys.argv[2].strip('/')+'/'
 
     url_tups = list(read_lines(url_file))
     urls     = [tup[1] for tup in url_tups]
-    
-    with ThreadPoolExecutor() as executor:
+
+    # Schedules the callable, fn, to be executed as fn(*args **kwargs) 
+    # and return a Future object representing the execution of the callable.
+    # If max_workers is None or not given, it will default to the number of 
+    # processors on the machine, multiplied by 5, assuming that ThreadPoolExecutor 
+    # is often used to overlap I/O instead of CPU work and the number of workers 
+    # should be higher than the number of workers for ProcessPoolExecutor.
+    with ThreadPoolExecutor(max_workers=None) as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
         for i, future in enumerate(as_completed(futures)):
             (outfile_name, url) = res = future.result()

@@ -6,7 +6,7 @@ Usage:
     generateurls --output OUTPUT
 
 Arguments:
-    -o --output OUTPUT    Text to be converted into snake_case
+    -o --output OUTPUT    filename where you want to save urls
 
 Options:
     -h --help           Show this message
@@ -22,23 +22,14 @@ from r6api.r6api import R6Api
 NAME = os.path.basename(__file__)
 VERSION = "0.0.1"
 
-def get_seen_records_list(seen_filename):
-    try:
-        return set([line.strip() for line in open(seen_filename,'r').readlines()])
-    except FileNotFoundError as err:
-        open(seen_filename, 'w').close()
-        return set()
-
 def main():
-    if not sys.stdin.isatty():
-        argv = _read_piped_input()
-    else:
-        argv = " ".join(sys.argv[1:])
-    args = docopt.docopt(__doc__, argv=argv, version="{}=={}".format(NAME, VERSION))
+    args = docopt.docopt(__doc__, argv=" ".join(sys.argv[1:]), 
+                         version="{}=={}".format(NAME, VERSION))
+
     try:
         output = args["--output"]
     except Exception as err:
-        sys.stderr.write(str(err)+os.linesep+os.linesep)
+        sys.stderr.write(str(err)+os.linesep)
         sys.stderr.write(__doc__)
         sys.exit(1)
     r6 = R6Api()

@@ -22,11 +22,17 @@ class DotDict(dict):
             self[key] = value
 
 def GET(url, params={}):
+    r = requests.Request('GET', url, params=params).prepare()
+    s = requests.Session()
     try:
-        data = requests.get(url, params=params).json()
+        res = s.send(r)
+        data = res.json()
+        meta = data.get('meta', {})
+        meta['url'] = res.url
+        data['meta'] = meta
         return DotDict(data)
     except Exception as err:
-        r = requests.Request('GET', url, params=params).prepare()
+        sys.stderr.write(str(err))
         raise Exception("GET exception", r.url)
 
 class Endpoint(object):
@@ -66,5 +72,6 @@ class R6Api(Endpoint):
     
     def __init__(self):
         super(R6Api, self).__init__(self.BASE_URL, self.ENDPOINTS)
+
 
 

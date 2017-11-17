@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
-import multiprocessing as mp
 import os
 import sys
 import requests
@@ -9,20 +8,10 @@ try:
 except:
     import json
 
-####
-####
-from queue import Queue
-from threading import Thread
-import logging 
-from time import time
-import shutil
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 import glob
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logging.getLogger('requests').setLevel(logging.CRITICAL)
-logger = logging.getLogger(__name__)
-####
-####
+import shutil
 
 def read_lines(filename):
     with open(filename, "r") as f:
@@ -33,84 +22,82 @@ def read_lines(filename):
             else:
                 continue
 
-def make_request(url):
+ 
+def get_request(url, params={}):
+    """
+    Downloads the specified URL and saves it to disk
+    """
     try:
-        return requests.get(url).json()
+        r = requests.Request('GET', url, params=params)
+        s = requests.Session()
+        return s.send(r.prepare())
     except Exception as err:
-        print(str(err))
-        return {}
+        sys.stderr.write(str(err), url)
+        sys.stderr.write('error in get_request')
+        sys.stderr.flush()
+        return None
 
-def dump_jsonl(data, outstream):
-    try:
-        json.dump(data, outstream)
-        outstream.write(os.linesep)
-    except:
-        pass
-
-########
-####
-
-class DownloadWorker(Thread):
-    def __init__(self, queue):
-        Thread.__init__(self)
-        self.queue = queue
-
-    def run(self):
-        out_fmt = 'data/page-{:07d}.jsonl'
-        while True:
-            # Get the work from the queue and expand the tuple
-            directory, (i, url) = self.queue.get()
-            data = make_request(url)
-            if data:
-                with open(out_fmt.format(i+1), 'w') as o:
-                    dump_jsonl(data, o)
-            self.queue.task_done()
+def dump_jsonl(data, outfile_name):
+    with open(outfile_name, 'w') as outstream:
+        try:
+            json.dump(data, outstream)
+            outstream.write(os.linesep)
+            return outfile_name
+        except Exception as err:
+            sys.stderr.write('error in dump_jsonl')
+            sys.stderr.write(str(err))
+            sys.stderr.flush()
+            return None
 
 def purge_files(list_of_files):
     for f in list_of_files:
         os.remove(f)
 
-def combine_all_files(list_of_files, combined_filename):
-    with open(combined_filename, 'wb') as outfile:
+def combine_all_files(list_of_files, combined_filename, cleanup=True):
+    with open(combined_filename, 'w') as outfile:
         for filename in list_of_files:
             if filename == combined_filename:
                 # don't want to copy the output into the output
                 continue
-            with open(filename, 'rb') as readfile:
+            with open(filename, 'r') as readfile:
                 shutil.copyfileobj(readfile, outfile)
 
-    purge_files(list_of_files)
+    if cleanup:
+        purge_files([f for f in list_of_files if f != combined_filename])
 
+def job(url, outdir):
+        outdir = outdir.strip('/')
+        url_parts = requests.packages.urllib3.util.parse_url(url)
+        leaderboard_name = url_parts.path.split('/')[-1]
+        page_number = int(url_parts.query.split('=')[-1])
+        outfile_name = '{}/page-{:07d}.jsonl'.format(outdir, page_number)
+        r = get_request(url)
+        if r is None:
+            return None
+        else:
+            data = r.json()
+            meta = data.get('meta', {})
+            meta['url'] = r.url
+            data['meta'] = meta
+            outfile_name = dump_jsonl(data, outfile_name)
+            return outfile_name
 
+def main(urls):
+    """
+    Create a thread pool and download specified urls
+    """
+    outdir = 'data/'
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(job, url, outdir) for url in urls]
+        for i, future in enumerate(as_completed(futures)):
+            res = future.result()
+            if i % 100 == 0:
+                print('processing request: ', i+1, res)
+
+    page_files = glob.glob(outdir+'*.jsonl')
+    combine_all_files(page_files, outdir+'combined-pages.jsonl', cleanup=True)
+ 
 if __name__ == '__main__':
-
-    ts = time()
-
-    infile = sys.argv[1]
-    download_dir = sys.argv[2]
-
-    urls = list(read_lines(infile))
-
-    # Create a queue to communicate with the worker threads
-    queue = Queue()
-
-    # Create 8 worker threads
-    for x in range(8):
-        worker = DownloadWorker(queue)
-        # Setting daemon to True will let the main thread exit even though the workers are blocking
-        worker.daemon = True
-        worker.start()
-
-        # Put the tasks into the queue as a tuple
-    for (i, url) in urls:
-        logger.info('Queueing {}'.format(url))
-        queue.put((download_dir, (i, url)))
-
-        # Causes main thread to wait for the queue to finish processing all tasks
-        queue.join()
-        logger.info('Took {}'.format(time() - ts))
-
-    outfile_names = glob.glob(download_dir+"*.jsonl")
-
-    combine_all_files(outfile_names, download_dir+"/pages.jsonl")
-
+    url_tups = list(read_lines('data/urls.txt'))
+    urls     = [tup[1] for tup in url_tups]
+    main(urls)

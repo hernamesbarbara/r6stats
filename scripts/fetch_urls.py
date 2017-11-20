@@ -16,8 +16,6 @@ import shutil
 import logging
 import pygogo as gogo
 
-
-
 logger = gogo.Gogo(os.path.basename(__file__),
     low_formatter=gogo.formatters.fixed_formatter,
     high_formatter=gogo.formatters.fixed_formatter
@@ -31,6 +29,10 @@ def read_lines(filename):
                 yield (i, line)
             else:
                 continue
+
+def get_difference(list_one, list_two):
+    "return items in list_one that do not appear in list_two"
+    return sorted(list(set(list_one).difference(set(list_two))))
 
  
 def get_request(url, params={}):
@@ -96,8 +98,15 @@ def main():
     url_file = sys.argv[1]
     outdir   = sys.argv[2].strip('/')+'/'
 
+    seen_file = outdir+'/'+'seen.txt'
+    try:
+        seen = [url.strip() for url in open(seen_file, 'r').readlines() if url.strip()]
+    except:
+        seen = []
+
     url_tups = list(read_lines(url_file))
-    urls     = [tup[1] for tup in url_tups]
+
+    urls = get_difference([tup[1] for tup in url_tups], seen)
 
     # Schedules the callable, fn, to be executed as fn(*args **kwargs) 
     # and return a Future object representing the execution of the callable.

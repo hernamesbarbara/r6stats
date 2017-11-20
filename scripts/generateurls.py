@@ -25,7 +25,6 @@ VERSION = "0.0.1"
 def main():
     args = docopt.docopt(__doc__, argv=" ".join(sys.argv[1:]), 
                          version="{}=={}".format(NAME, VERSION))
-
     try:
         output = args["--output"]
     except Exception as err:

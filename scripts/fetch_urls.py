@@ -115,21 +115,21 @@ def main():
     start_time = time.time()
     elapsed_time = 0
     n_loops = 0
-    fmt_loop_time = "Elapsed Time {:10.1f} sec.\nLoops {}\nLoops per sec. {:10.5f}\n"
+    fmt_loop_time = "Elapsed Time {:10.1f} sec.\nLoops {}\nLoops per sec. {:10.10f}\n"
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
         seen = set()
         for i, future in enumerate(as_completed(futures)):
             elapsed_time = time.time() - elapsed_time
             n_loops += 1
-            loops_per_sec = n_loops / elapsed_time
+            loops_per_min = n_loops / (elapsed_time / 60.0)
             outfile_name, url = future.result()
             if url and url.strip():
                 seen.add(url.strip())
             if i % 100 == 0:
                 msg = "GET '{}' => '{}'".format(url, outfile_name)
                 logger.debug(msg)
-                logger.debug(fmt_loop_time.format(elapsed_time, n_loops, loops_per_sec))
+                logger.debug(fmt_loop_time.format(elapsed_time, n_loops, loops_per_min))
                 with open(seen_file, 'a') as f:
                     f.write(os.linesep.join(seen))
                     f.write(os.linesep)

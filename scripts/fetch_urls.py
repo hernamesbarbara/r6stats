@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*- 
 import os
 import sys
+import time
 import requests
 try:
     import ujson as json
@@ -110,20 +111,31 @@ def main():
     # processors on the machine, multiplied by 5, assuming that ThreadPoolExecutor 
     # is often used to overlap I/O instead of CPU work and the number of workers 
     # should be higher than the number of workers for ProcessPoolExecutor.
+    
+    start_time = time.time()
+    elapsed_time = 0
+    n_loops = 0
+    fmt_loop_time = "Elapsed Time {:10.1f} sec.\nLoops {}\nLoops per sec. {:10.5f}\n"
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
         seen = set()
         for i, future in enumerate(as_completed(futures)):
+            elapsed_time = time.time() - elapsed_time
+            n_loops += 1
+            loops_per_sec = n_loops / elapsed_time
             outfile_name, url = future.result()
             if url and url.strip():
                 seen.add(url.strip())
             if i % 100 == 0:
                 msg = "GET '{}' => '{}'".format(url, outfile_name)
                 logger.debug(msg)
+                logger.debug(fmt_loop_time.format(elapsed_time, n_loops, loops_per_sec))
                 with open(seen_file, 'a') as f:
                     f.write(os.linesep.join(seen))
                     f.write(os.linesep)
                 seen = set()
+
+            
 
     page_files = glob.glob(outdir+'*.jsonl')
     combined_filename = outdir+'combined-pages.jsonl'

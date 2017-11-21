@@ -23,16 +23,18 @@ logger = gogo.Gogo(os.path.basename(__file__),
 
 def read_lines(filename):
     with open(filename, "r") as f:
-        for i, line in enumerate(f.readlines()):
+        for line in f.readlines():
             line = line.strip()
             if line:
-                yield (i, line)
+                yield line
             else:
                 continue
 
-def get_difference(list_one, list_two):
-    "return items in list_one that do not appear in list_two"
-    return sorted(list(set(list_one).difference(set(list_two))))
+def get_unseen_urls(url_file, seen_file):
+    "get urls from url_file if they dont appear in seen_file"
+    urls = read_lines(url_file)
+    seen = read_lines(seen_file)
+    return sorted(set(urls).difference(set(seen)))
 
  
 def get_request(url, params={}):
@@ -78,7 +80,7 @@ def job(url, outdir):
         url_parts = requests.packages.urllib3.util.parse_url(url)
         leaderboard_name = url_parts.path.split('/')[-1]
         page_number = int(url_parts.query.split('=')[-1])
-        outfile_name = '{}/page-{:07d}.jsonl'.format(outdir, page_number)
+        outfile_name = '{}/{}-page-{:07d}.jsonl'.format(outdir, leaderboard_name, page_number)
         r = get_request(url)
         if r is None:
             res = (None, url)
@@ -88,7 +90,7 @@ def job(url, outdir):
             meta['url'] = r.url
             data['meta'] = meta
             outfile_name = dump_jsonl(data, outfile_name)
-            res = (outfile_name, url)
+            res = outfile_name, url
         return res
 
 def main():
@@ -97,17 +99,11 @@ def main():
     """
     url_file = sys.argv[1]
     outdir   = sys.argv[2].strip('/')+'/'
-
-    seen_file = outdir+'/'+'seen.txt'
-    try:
-        seen = [url.strip() for url in open(seen_file, 'r').readlines() if url.strip()]
-    except:
-        seen = []
-
-    url_tups = list(read_lines(url_file))
-
-    urls = get_difference([tup[1] for tup in url_tups], seen)
-
+    seen_file = outdir+"seen.txt"
+    if not (os.path.exists(seen_file) and os.path.isfile(seen_file)):
+        with open(seen_file, 'w+') as f:
+            pass
+    urls = get_unseen_urls(url_file, seen_file)
     # Schedules the callable, fn, to be executed as fn(*args **kwargs) 
     # and return a Future object representing the execution of the callable.
     # If max_workers is None or not given, it will default to the number of 
@@ -116,11 +112,18 @@ def main():
     # should be higher than the number of workers for ProcessPoolExecutor.
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
+        seen = set()
         for i, future in enumerate(as_completed(futures)):
-            (outfile_name, url) = res = future.result()
+            outfile_name, url = future.result()
+            if url and url.strip():
+                seen.add(url.strip())
             if i % 100 == 0:
                 msg = "GET '{}' => '{}'".format(url, outfile_name)
                 logger.debug(msg)
+                with open(seen_file, 'a') as f:
+                    f.write(os.linesep.join(seen))
+                    f.write(os.linesep)
+                seen = set()
 
     page_files = glob.glob(outdir+'*.jsonl')
     combined_filename = outdir+'combined-pages.jsonl'

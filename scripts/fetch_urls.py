@@ -111,19 +111,13 @@ def main():
     # processors on the machine, multiplied by 5, assuming that ThreadPoolExecutor 
     # is often used to overlap I/O instead of CPU work and the number of workers 
     # should be higher than the number of workers for ProcessPoolExecutor.
-    
-    start_time = time.time()
-    elapsed_time = 0
-    n_loops = 0
-    fmt_loop_time = "Loops {}\nLoops per sec. {:10.10f}\n"
+
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
         seen = set()
+        loop_time = time.time()
         for i, future in enumerate(as_completed(futures)):
-            elapsed_time = time.time() - elapsed_time
-            n_loops += 1
-            loops_per_sec = n_loops / elapsed_time
-            loops_per_min = n_loops / elapsed_time / 60
+
             outfile_name, url = future.result()
             if url and url.strip():
                 seen.add(url.strip())
@@ -131,7 +125,6 @@ def main():
                 continue
             msg = "GET '{}' => '{}'".format(url, outfile_name)
             logger.debug(msg)
-            logger.debug(fmt_loop_time.format(elapsed_time, n_loops, loops_per_min))
             
             # write seen urls to file every 100 calls
             if i % 100 == 0:
@@ -139,6 +132,8 @@ def main():
                     f.write(os.linesep.join(seen))
                     f.write(os.linesep)
                 seen = set()
+            logger.debug("Loop Completd in: {:10.10f}".format(time.time()-loop_time))
+            loop_time = time.time()
 
     page_files = glob.glob(outdir+'*.jsonl')
     combined_filename = outdir+'combined-pages.jsonl'

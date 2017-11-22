@@ -114,27 +114,23 @@ def main():
 
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = [executor.submit(job, url, outdir) for url in urls]
-        seen = set()
         loop_time = time.time()
         for i, future in enumerate(as_completed(futures)):
-
-            outfile_name, url = future.result()
-            if url and url.strip():
-                seen.add(url.strip())
-            else:
-                continue
-            msg = "GET '{}' => '{}'".format(url, outfile_name)
-            logger.debug(msg)
-            
-            # write seen urls to file every 100 calls
-            if i % 100 == 0:
-                with open(seen_file, 'a') as f:
-                    f.write(os.linesep.join(seen))
-                    f.write(os.linesep)
-                seen = set()
-            logger.debug("Loop Completd in: {:10.10f}".format(time.time()-loop_time))
-            loop_time = time.time()
-
+            try:
+                outfile_name, url = future.result()
+                if url and url.strip():
+                    msg = "GET '{}' => '{}'".format(url, outfile_name)
+                    logger.debug(msg)
+                    with open(seen_file, 'a') as f:
+                        f.write(os.linesep.join(seen))
+                        f.write(os.linesep)
+                else:
+                    continue
+            except Exception as err:
+                logger.error(str(err))
+            if i % 10 == 0:
+                logger.debug("Loop Completd in: {:10.10f}".format(time.time()-loop_time))
+                loop_time = time.time()
     page_files = glob.glob(outdir+'*.jsonl')
     combined_filename = outdir+'combined-pages.jsonl'
     combine_all_files(page_files, combined_filename, cleanup=True)

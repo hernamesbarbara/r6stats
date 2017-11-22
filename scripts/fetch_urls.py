@@ -122,7 +122,7 @@ def main():
                     msg = "GET '{}' => '{}'".format(url, outfile_name)
                     logger.debug(msg)
                     with open(seen_file, 'a') as f:
-                        f.write(os.linesep.join(seen))
+                        f.write(url.strip())
                         f.write(os.linesep)
                 else:
                     continue

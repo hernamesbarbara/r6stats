@@ -11,7 +11,6 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from utils import r6io
 from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 

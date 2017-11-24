@@ -95,9 +95,8 @@ def _parse_args():
 
 def main():
     (infile, dirname, f_name, o_csv) = _parse_args()
-    # next line
-    # CPU times: user 1min 14s, sys: 7.69 s, total: 1min 22s
-    # Wall time: 1min 23s
+    # CPU times: user 15min 17s, sys: 8.61 s, total: 15min 25s
+    # Wall time: 15min 29s
     print("Saving to csv...")
     jsonl_to_csv(infile, o_csv)
 

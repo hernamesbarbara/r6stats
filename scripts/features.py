@@ -14,40 +14,63 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 
+pd.options.display.width = 180; pd.options.display.max_colwidth = 80; pd.options.display.max_columns = 60
+
+def try_cast_int(num):
+    if not num:
+        return -999
+    try:
+        return np.int64(np.float64(num))
+    except Exception as err:
+        sys.stderr.write(u" ".join([str(err), str(num)]))
+        sys.stderr.flush()
+        try:
+            return np.float64(num)
+        except Exception as err:
+            sys.stderr.write(u" ".join([str(err), str(num)]))
+            sys.stderr.flush()
+            raise
+
 DATA_TYPES = {
+    "meta.current_page": try_cast_int,
+    "meta.next_page": try_cast_int,
+    "meta.prev_page": try_cast_int,
+    "meta.total_count": try_cast_int,
+    "meta.total_pages": try_cast_int,
+    "meta.url": np.unicode,
     "ubisoft_id": np.unicode,
-    "stats.overall.bullets_hit": np.int64,
-    "stats.ranked.deaths": np.int64,
-    "stats.progression.level": np.int64,
+    "stats.overall.bullets_hit": try_cast_int,
+    "stats.ranked.deaths": try_cast_int,
+    "stats.progression.level": try_cast_int,
     "stats.casual.wlr": np.float64,
-    "stats.overall.penetration_kills": np.int64,
+    "stats.overall.penetration_kills": try_cast_int,
     "updated_at": pd.to_datetime,
-    "stats.ranked.losses": np.int64,
-    "stats.overall.melee_kills": np.int64,
+    "stats.ranked.losses": try_cast_int,
+    "stats.overall.melee_kills": try_cast_int,
     "stats.casual.has_played": np.bool,
-    "stats.overall.bullets_fired": np.int64,
-    "stats.ranked.wins": np.int64,
-    "stats.overall.headshots": np.int64,
+    "stats.overall.bullets_fired": try_cast_int,
+    "stats.ranked.wins": try_cast_int,
+    "stats.overall.headshots": try_cast_int,
     "indexed_at": pd.to_datetime,
     "stats.ranked.kd": np.float64,
     "platform": np.unicode,
     "stats.ranked.wlr": np.float64,
     "username": np.unicode,
-    "stats.overall.revives": np.int64,
-    "stats.casual.playtime": np.int64,
+    "stats.overall.revives": try_cast_int,
+    "stats.casual.playtime": try_cast_int,
     "stats.casual.wins": np.float64,
-    "stats.progression.xp": np.int64,
-    "stats.ranked.playtime": np.int64,
-    "stats.overall.assists": np.int64,
-    "stats.overall.barricades_built": np.int64,
-    "stats.casual.losses": np.int64,
-    "stats.casual.kills": np.int64,
-    "stats.casual.deaths": np.int64,
-    "stats.overall.suicides": np.int64,
-    "stats.overall.reinforcements_deployed": np.int64,
+    "stats.progression.xp": try_cast_int,
+    "stats.ranked.playtime": try_cast_int,
+    "stats.overall.assists": try_cast_int,
+    "stats.overall.barricades_built": try_cast_int,
+    "stats.casual.losses": try_cast_int,
+    "stats.casual.kills": try_cast_int,
+    "stats.casual.deaths": try_cast_int,
+    "stats.overall.suicides": try_cast_int,
+    "stats.overall.reinforcements_deployed": try_cast_int,
     "stats.casual.kd": np.float64,
-    "stats.overall.steps_moved": np.int64,
-    "stats.ranked.kills": np.int64,
+    "stats.overall.steps_moved": try_cast_int,
+    "stats.ranked.kills": try_cast_int,
     "stats.ranked.has_played": np.bool
 }
 
@@ -145,7 +168,16 @@ def main():
     infile = sys.argv[1]
     f_name, _ = os.path.splitext(infile)
     print("Reading {}".format(infile))
-    df = pd.read_csv(infile)
+    
+    # CPU times: user 25.6 s, sys: 1.79 s, total: 27.4 s
+    # Wall time: 27.7 s
+    # df = pd.read_csv(infile)
+    
+    # CPU times: user 6min 32s, sys: 2.78 s, total: 6min 34s
+    # Wall time: 6min 36s
+    df = pd.read_csv('data/combined-pages.csv', converters=DATA_TYPES)
+    df = df.drop_duplicates('ubisoft_id')
+   
     df = get_features_dataframe(df, verbose=True)
     id_cols = ['ubisoft_id', 'platform']
 
@@ -172,5 +204,7 @@ def main():
     df.to_csv(outfile, index=False, encoding='utf-8')
     print("Saved {} rows w/ {} columns to {}".format(len(df), len(df.columns), outfile))
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
+
+f = 'data/combined-pages.csv'

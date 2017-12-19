@@ -57,34 +57,35 @@ def drop_duplicate_players(frame):
     return frame
 
 ############
-infile = sys.argv[1]
-outfile = sys.argv[2]
 
-f_name, _ = os.path.splitext(infile)
+def main():
+    infile = sys.argv[1]
+    outfile = sys.argv[2]
 
-print("Reading {}".format(infile))
-df = pd.read_csv(infile, parse_dates=['indexed_at', 'updated_at'])
+    f_name, _ = os.path.splitext(infile)
 
-print("nrow: {}".format(len(df)))
-print("ncol: {}".format(len(df.columns)))
+    print("Reading {}".format(infile))
+    df = pd.read_csv(infile, parse_dates=['indexed_at', 'updated_at'])
 
-print('renaming columns to common convention')
-df = ensure_uniform_colnames(df)
-print('summing up player stats')
-df = add_overall_totals(df)
+    print("nrow: {}".format(len(df)))
+    print("ncol: {}".format(len(df.columns)))
 
-print('dropping rows with low playtime')
-df = drop_rows_with_low_playtime(df)
+    print('renaming columns to common convention')
+    df = ensure_uniform_colnames(df)
+    print('summing up player stats')
+    df = add_overall_totals(df)
 
-print('dropping rows with invalid negatives stats values')
-df = drop_rows_with_negative_stats(df)
+    print('dropping rows with low playtime')
+    df = drop_rows_with_low_playtime(df)
 
-print('dropping duplicate players')
-df = drop_duplicate_players(df)
+    print('dropping rows with invalid negatives stats values')
+    df = drop_rows_with_negative_stats(df)
 
-print("nrow: {}".format(len(df)))
-print("ncol: {}".format(len(df.columns)))
+    print('dropping duplicate players')
+    df = drop_duplicate_players(df)
 
-print('writing {}'.format(outfile))
-df.to_csv(outfile, index=False, encoding='utf-8')
+    print("nrow: {}".format(len(df)))
+    print("ncol: {}".format(len(df.columns)))
 
+    print('writing {}'.format(outfile))
+    df.to_csv(outfile, index=False, encoding='utf-8')
